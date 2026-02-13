@@ -1,1 +1,25 @@
-
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Загадки</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        body { font-family: sans-serif; background: #f0f0f0; text-align: center; padding: 20px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h1>Твоя первая загадка</h1>
+        <p id="riddle-text">Загрузка...</p>
+        <button id="show-answer">Показать ответ</button>
+    </div>
+    <script>
+        const tg = window.Telegram.WebApp;
+        tg.expand(); // Развернуть на весь экран
+        document.getElementById('riddle-text').innerText = "Что можно увидеть с закрытыми глазами?";
+    </script>
+</body>
+</html>
