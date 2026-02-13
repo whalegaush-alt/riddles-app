@@ -2,24 +2,94 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Загадки</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <style>
-        body { font-family: sans-serif; background: #f0f0f0; text-align: center; padding: 20px; }
-        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        :root {
+            --tg-theme-bg-color: #ffffff;
+            --tg-theme-text-color: #222222;
+            --tg-theme-button-color: #3390ec;
+            --tg-theme-button-text-color: #ffffff;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-theme-bg-color);
+            color: var(--tg-theme-text-color);
+            margin: 0; padding: 20px;
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            min-height: 90vh;
+        }
+        .card {
+            background: rgba(128, 128, 128, 0.05);
+            border-radius: 20px; padding: 30px; width: 100%; max-width: 350px;
+            box-sizing: border-box; text-align: center; border: 1px solid rgba(128, 128, 128, 0.1);
+        }
+        #question { font-size: 1.4rem; font-weight: 600; margin-bottom: 25px; line-height: 1.4; }
+        #answer { 
+            font-size: 1.2rem; color: #31b545; font-weight: bold; 
+            margin-top: 20px; padding: 15px; border-radius: 10px;
+            background: rgba(49, 181, 69, 0.1); display: none; 
+        }
+        .btn {
+            background-color: var(--tg-theme-button-color);
+            color: var(--tg-theme-button-text-color);
+            border: none; border-radius: 12px; padding: 15px 25px;
+            font-size: 1rem; font-weight: 500; width: 100%; cursor: pointer;
+            margin-top: 10px;
+        }
+        .btn-next { background-color: #777; margin-top: 15px; opacity: 0.8; }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h1>Твоя первая загадка</h1>
-        <p id="riddle-text">Загрузка...</p>
-        <button id="show-answer">Показать ответ</button>
+        <div id="question">Загрузка загадки...</div>
+        <div id="answer"></div>
+        
+        <button id="show-btn" class="btn">ПОКАЗАТЬ ОТВЕТ</button>
+        <button id="next-btn" class="btn btn-next">СЛЕДУЮЩАЯ</button>
     </div>
+
     <script>
         const tg = window.Telegram.WebApp;
-        tg.expand(); // Развернуть на весь экран
-        document.getElementById('riddle-text').innerText = "Что можно увидеть с закрытыми глазами?";
+        tg.expand();
+        tg.ready();
+
+        const questionEl = document.getElementById('question');
+        const answerEl = document.getElementById('answer');
+        const showBtn = document.getElementById('show-btn');
+        const nextBtn = document.getElementById('next-btn');
+
+        async function fetchRiddle() {
+            questionEl.innerText = "Ищу загадку...";
+            answerEl.style.display = 'none';
+            showBtn.style.display = 'block';
+            
+            try {
+                const response = await fetch('/api/riddle');
+                const data = await response.json();
+                
+                if (data.question) {
+                    questionEl.innerText = data.question;
+                    answerEl.innerText = data.answer;
+                } else {
+                    questionEl.innerText = "Загадки кончились 🙄";
+                }
+            } catch (e) {
+                questionEl.innerText = "Ошибка связи с сервером";
+            }
+        }
+
+        showBtn.onclick = () => {
+            answerEl.style.display = 'block';
+            showBtn.style.display = 'none';
+        };
+
+        nextBtn.onclick = () => fetchRiddle();
+
+        // Загружаем первую загадку при старте
+        fetchRiddle();
     </script>
 </body>
 </html>
