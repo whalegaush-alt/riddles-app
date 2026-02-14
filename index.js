@@ -5,51 +5,51 @@ const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
 const app = express();
-
-// Инициализация пула соединений
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
 const bot = new Telegraf(process.env.BOT_TOKEN);
+const ADMIN_ID = process.env.ADMIN_ID; // Твой ID из переменных
 
-// Обработка команды /start
+// 1. Бот: показываем админку только тебе
 bot.start((ctx) => {
   const webAppUrl = process.env.URL;
-  ctx.reply('Готов размять мозги?', Markup.inlineKeyboard([
-    Markup.button.webApp('Открыть загадки 🧩', webAppUrl)
-  ]));
+  const buttons = [Markup.button.webApp('Открыть загадки 🧩', webAppUrl)];
+
+  // Если зашел админ, добавляем вторую кнопку
+  if (ctx.from.id.toString() === ADMIN_ID) {
+    buttons.push(Markup.button.url('Админка (Добавить) ⚙️', `${webAppUrl}/admin.html` || ''));
+  }
+
+  ctx.reply('Привет! Готов к загадкам?', Markup.inlineKeyboard(buttons, { columns: 1 }));
 });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// API эндпоинт
+// 2. API: Получение случайной загадки
 app.get('/api/riddle', async (req, res) => {
   try {
-    console.log('--- Запрос к базе данных ---');
-    // Используем простой запрос без лишних фильтров для проверки
     const result = await pool.query('SELECT * FROM public.riddles ORDER BY RANDOM() LIMIT 1');
-    
-    if (result.rows.length === 0) {
-      console.log('Таблица пуста');
-      return res.status(404).json({ error: 'Загадок нет' });
-    }
-    
-    res.json(result.rows[0]);
+    res.json(result.rows[0] || { error: 'Загадок нет' });
   } catch (err) {
-    console.error('ОШИБКА ПОДКЛЮЧЕНИЯ К БД:', err.message);
-    res.status(500).json({ error: 'Ошибка базы: ' + err.message });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// 3. API: Добавление новой загадки (Админка)
+app.post('/api/riddles', async (req, res) => {
+  const { question, answer } = req.body;
+  try {
+    await pool.query('INSERT INTO public.riddles (question, answer) VALUES ($1, $2)', [question, answer]);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`Сервер на порту ${PORT}`);
-});
-
-bot.launch().catch(err => console.error('Ошибка бота:', err));
-
+app.listen(PORT, () => console.log(`Сервер запущен`));
+bot.launch();
