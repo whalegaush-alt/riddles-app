@@ -3,38 +3,52 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панель управления загадками</title>
+    <title>Панель Мага (Админка)</title>
     <style>
-        body { font-family: 'Segoe UI', sans-serif; padding: 20px; background: #f4f7f9; color: #333; }
-        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px; margin: auto; }
-        h2 { text-align: center; color: #248bcf; }
+        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
+        .card { background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 400px; }
+        h2 { color: #248bcf; text-align: center; margin-top: 0; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; margin-bottom: 5px; font-weight: bold; }
-        input, textarea { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 6px; box-sizing: border-box; font-size: 16px; }
-        button { background: #248bcf; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        input, textarea, select { width: 100%; padding: 12px; border: 2px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; }
+        select { background: #fff; cursor: pointer; }
+        button { background: #248bcf; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-size: 16px; font-weight: bold; margin-top: 10px; transition: 0.3s; }
         button:hover { background: #1a6fa3; }
         #status { text-align: center; margin-top: 15px; font-weight: bold; }
     </style>
 </head>
 <body>
     <div class="card">
-        <h2>Добавить загадку 🧩</h2>
+        <h2>Добавить Магию 🔮</h2>
+        
+        <div class="form-group">
+            <label>Категория уровня:</label>
+            <select id="category">
+                <option value="лёгкие">🍄 Грибной лес (Лёгкие)</option>
+                <option value="сложные">🌋 Драконья гора (Сложные)</option>
+                <option value="с подвохом">🔮 Зеркальный замок (С подвохом)</option>
+            </select>
+        </div>
+
         <div class="form-group">
             <label>Текст загадки:</label>
-            <textarea id="q" rows="3" placeholder="Например: Зимой и летом одним цветом?"></textarea>
+            <textarea id="question" rows="3" placeholder="Введите текст..."></textarea>
         </div>
+        
         <div class="form-group">
             <label>Правильный ответ:</label>
-            <input type="text" id="a" placeholder="Например: ЕЛКА">
+            <input type="text" id="answer" placeholder="ОТВЕТ">
         </div>
-        <button onclick="save()">ДОБАВИТЬ В БАЗУ</button>
+
+        <button onclick="saveRiddle()">ДОБАВИТЬ В ИГРУ</button>
         <div id="status"></div>
     </div>
 
     <script>
-        async function save() {
-            const q = document.getElementById('q');
-            const a = document.getElementById('a');
+        async function saveRiddle() {
+            const q = document.getElementById('question');
+            const a = document.getElementById('answer');
+            const c = document.getElementById('category');
             const status = document.getElementById('status');
             
             if (!q.value || !a.value) {
@@ -48,12 +62,13 @@
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ 
                     question: q.value, 
-                    answer: a.value.toUpperCase().trim() // Автоматически в ВЕРХНИЙ РЕГИСТР
+                    answer: a.value.toUpperCase().trim(),
+                    category: c.value 
                 })
             });
 
             if (res.ok) {
-                status.innerText = "✅ Успешно добавлено!";
+                status.innerText = "✅ Загадка добавлена в " + c.value;
                 status.style.color = "green";
                 q.value = '';
                 a.value = '';
