@@ -3,50 +3,77 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Disney Quiz</title>
+    <title>Magic Menu</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        /* Дополнительные стили для меню */
+        #menu-screen { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; margin-top: 50px; }
+        #game-screen { display: none; width: 100%; flex-direction: column; align-items: center; }
+        .menu-btn { 
+            padding: 25px; border-radius: 25px; border: none; color: white; font-weight: 900; font-size: 18px; 
+            box-shadow: 0 8px 0 rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s;
+        }
+        .btn-easy { background: #4cd137; }
+        .btn-hard { background: #e84118; }
+        .btn-trick { background: #f39c12; }
+        .btn-back { background: #6c757d; margin-top: 20px; width: 100px; padding: 10px; font-size: 12px; }
+    </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="stat-card">МЕСТО<span id="rank">-</span></div>
-        <div class="stat-card">БАЛЛЫ<span id="score">0</span></div>
-        <div class="stat-card">ЛАМПЫ<span id="hints">0</span></div>
+    <div id="menu-screen">
+        <h1 style="color: white; text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">Выбери уровень ✨</h1>
+        <button class="menu-btn btn-easy" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄<br><small>(Лёгкие)</small></button>
+        <button class="menu-btn btn-hard" onclick="startGame('сложные')">ДРАКОНЬЯ ГОРА 🌋<br><small>(Сложные)</small></button>
+        <button class="menu-btn btn-trick" onclick="startGame('с подвохом')">ЗЕРКАЛЬНЫЙ ЗАМОК 🔮<br><small>(С подвохом)</small></button>
     </div>
 
-    <div class="question-box" id="q-text">Загрузка магии...</div>
-    <div class="boxes" id="box-container"></div>
-    <div class="keyboard" id="kb"></div>
-
-    <div class="actions">
-        <button class="btn btn-hint" onclick="useHint()">💡 ПОДСКАЗКА</button>
-        <button id="b-check" class="btn btn-check" onclick="check()">ПРОВЕРИТЬ!</button>
-        <button id="b-reveal" class="btn btn-reveal" onclick="reveal()">ОТВЕТ</button>
-        <button id="b-next" class="btn btn-next" onclick="load()">ДАЛЬШЕ ✨</button>
+    <div id="game-screen">
+        <div class="header">
+            <div class="stat-card">МЕСТО<span id="rank">-</span></div>
+            <div class="stat-card">БАЛЛЫ<span id="score">0</span></div>
+            <div class="stat-card">ЛАМПЫ<span id="hints">0</span></div>
+        </div>
+        <div class="question-box" id="q-text">...</div>
+        <div class="boxes" id="box-container"></div>
+        <div class="keyboard" id="kb"></div>
+        <div class="actions">
+            <button class="btn btn-hint" onclick="useHint()">💡</button>
+            <button id="b-check" class="btn btn-check" onclick="check()">ПРОВЕРИТЬ!</button>
+            <button id="b-reveal" class="btn btn-reveal" onclick="reveal()">ОТВЕТ</button>
+            <button id="b-next" class="btn btn-next" onclick="loadRiddle()">ДАЛЬШЕ ✨</button>
+        </div>
+        <button class="btn btn-back" onclick="showMenu()">↩ МЕНЮ</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    let curRiddle = null, selIdx = 0, fullAns = "";
+    let curRiddle = null, selIdx = 0, fullAns = "", currentCategory = "";
 
-    async function updateStats() {
-        const r = await fetch('/api/user-info', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, username: tg.initDataUnsafe.user.first_name })
-        });
-        const d = await r.json();
-        document.getElementById('rank').innerText = d.rank;
-        document.getElementById('score').innerText = d.score;
-        document.getElementById('hints').innerText = d.hints;
+    function showMenu() {
+        document.getElementById('menu-screen').style.display = 'flex';
+        document.getElementById('game-screen').style.display = 'none';
     }
 
-    async function load() {
+    function startGame(cat) {
+        currentCategory = cat;
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        loadRiddle();
+    }
+
+    async function loadRiddle() {
         const qBox = document.getElementById('q-text');
         qBox.classList.remove('question-success', 'question-error');
         
-        const r = await fetch('/api/riddle');
+        const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCategory)}`);
+        if (!r.ok) {
+            tg.showAlert("В этой категории пока нет загадок!");
+            showMenu();
+            return;
+        }
         curRiddle = await r.json();
         qBox.innerText = curRiddle.question;
         
@@ -73,8 +100,23 @@
         updateStats();
     }
 
+    // Вставь сюда остальные функции (createKb, check, useHint, reveal, updateStats) из прошлого ответа...
+    // [Они остаются без изменений]
+    
+    async function updateStats() {
+        const r = await fetch('/api/user-info', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, username: tg.initDataUnsafe.user.first_name })
+        });
+        const d = await r.json();
+        document.getElementById('rank').innerText = d.rank;
+        document.getElementById('score').innerText = d.score;
+        document.getElementById('hints').innerText = d.hints;
+    }
+
     function createKb() {
         const k = document.getElementById('kb');
+        k.innerHTML = '';
         "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split('').forEach(l => {
             const d = document.createElement('div');
             d.className = 'key'; d.innerText = l;
@@ -129,7 +171,7 @@
     async function useHint() {
         const hText = document.getElementById('hints').innerText;
         if(parseInt(hText) <= 0) {
-            tg.showConfirm("Магия кончилась! Смотреть рекламу (+3 лампы)?", async (ok) => {
+            tg.showConfirm("Магия закончилась! Посмотреть рекламу (+3 💡)?", async (ok) => {
                 if(ok) {
                     await fetch('/api/add-hints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
                     updateStats();
@@ -142,10 +184,10 @@
     }
 
     function reveal() {
-        tg.showConfirm(`Ответ: ${fullAns}. Идем дальше?`, (ok) => { if(ok) load(); });
+        tg.showConfirm(`Ответ: ${fullAns}. Идем дальше?`, (ok) => { if(ok) loadRiddle(); });
     }
 
-    createKb(); load();
+    createKb();
 </script>
 </body>
 </html>
