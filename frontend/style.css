@@ -1,12 +1,8 @@
 :root {
     --disney-blue: #248bcf;
-    --disney-dark-blue: #1a6fa3;
     --disney-yellow: #ffcc00;
-    --disney-gold: #e1b300;
     --disney-green: #4cd137;
-    --disney-dark-green: #3bad2a;
     --disney-red: #e84118;
-    --disney-white: #ffffff;
     --bg-gradient: linear-gradient(180deg, #74b9ff 0%, #a29bfe 100%);
 }
 
@@ -33,21 +29,20 @@ body {
 #game-screen { display: none; width: 100%; flex-direction: column; align-items: center; }
 
 .header {
-    display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-    background: rgba(255, 255, 255, 0.95); padding: 15px;
+    display: grid; grid-template-columns: 1fr 1fr; /* 2 колонки: Рейтинг и Подсказки */
+    gap: 15px; background: rgba(255, 255, 255, 0.95); padding: 15px;
     border-radius: 20px; box-shadow: 0 6px 0 rgba(0,0,0,0.1);
     margin-bottom: 20px; width: 100%; max-width: 400px;
 }
 
-.stat-card { text-align: center; font-size: 10px; font-weight: 900; color: #57606f; }
-.stat-card span { display: block; font-size: 18px; color: var(--disney-blue); }
+.stat-card { text-align: center; font-size: 12px; font-weight: 900; color: #57606f; }
+.stat-card span { display: block; font-size: 20px; color: var(--disney-blue); }
 
 .question-box {
     background: white; padding: 25px; border-radius: 25px;
     box-shadow: 0 8px 0 rgba(0,0,0,0.1); margin-bottom: 20px;
     font-size: 20px; font-weight: bold; text-align: center;
     border: 4px solid var(--disney-blue); width: 100%; max-width: 400px;
-    transition: 0.3s;
 }
 
 .question-success { background: var(--disney-green) !important; color: white; border-color: white; }
@@ -73,7 +68,11 @@ body {
     background: rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 20px;
     width: 100%; max-width: 450px;
 }
-.key { background: white; padding: 12px 0; border-radius: 10px; font-weight: bold; box-shadow: 0 4px 0 #bdc3c7; cursor: pointer; }
+.key { 
+    background: white; padding: 12px 0; border-radius: 10px; font-weight: bold; 
+    box-shadow: 0 4px 0 #bdc3c7; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; /* Буквы по центру */
+}
 .key:active { transform: translateY(2px); box-shadow: 0 2px 0 #bdc3c7; }
 .key.del { grid-column: span 2; background: #ff7675; color: white; }
 
@@ -82,6 +81,4 @@ body {
 .btn-hint { background: #a29bfe; }
 .btn-check { background: var(--disney-green); }
 .btn-reveal { background: var(--disney-yellow); color: #634d00; }
-.btn-next { background: var(--disney-blue); grid-column: span 3; display: none; font-size: 18px; padding: 20px; animation: bounce 2s infinite; }
-
-@keyframes bounce { 0%, 100% {transform: scale(1);} 50% {transform: scale(1.05);} }
+.btn-next { background: var(--disney-blue); grid-column: span 3; display: none; font-size: 18px; padding: 20px; }
