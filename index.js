@@ -64,11 +64,5 @@ app.post('/api/add-hints', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/riddles', async (req, res) => {
-  const { question, answer, category } = req.body;
-  await pool.query('INSERT INTO public.riddles (question, answer, category) VALUES ($1, $2, $3)', [question, answer, category]);
-  res.json({ success: true });
-});
-
 app.listen(process.env.PORT || 8080);
 bot.launch();
