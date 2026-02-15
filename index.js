@@ -19,12 +19,28 @@ bot.start((ctx) => {
   if (ctx.from.id.toString() === ADMIN_ID) {
     buttons.push(Markup.button.url('АДМИНКА ⚙️', `${webAppUrl}/admin.html`));
   }
-  ctx.reply(`Добро пожаловать, ${ctx.from.first_name}!`, Markup.inlineKeyboard(buttons));
+  ctx.reply(`Добро пожаловать в мир магии! Выбирай уровень и начни игру!`, Markup.inlineKeyboard(buttons));
 });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
+// Получение загадки с учетом категории
+app.get('/api/riddle', async (req, res) => {
+  const { category } = req.query;
+  try {
+    const r = await pool.query(
+      'SELECT id, question, answer FROM public.riddles WHERE category = $1 ORDER BY RANDOM() LIMIT 1',
+      [category || 'лёгкие']
+    );
+    if (r.rows.length === 0) {
+      return res.status(404).json({ error: 'Загадок в этой категории пока нет' });
+    }
+    res.json({ id: r.rows[0].id, question: r.rows[0].question, len: r.rows[0].answer.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// Все остальные API (user-info, check, reveal, use-hint, add-hints) оставляем из прошлого кода...
 app.post('/api/user-info', async (req, res) => {
   const { user_id, username } = req.body;
   try {
@@ -32,11 +48,6 @@ app.post('/api/user-info', async (req, res) => {
     const data = await pool.query(`SELECT score, hints, (SELECT COUNT(*) + 1 FROM public.users u2 WHERE u2.score > u1.score) as rank FROM public.users u1 WHERE user_id = $1`, [user_id]);
     res.json(data.rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
-});
-
-app.get('/api/riddle', async (req, res) => {
-  const r = await pool.query('SELECT id, question, answer FROM public.riddles ORDER BY RANDOM() LIMIT 1');
-  res.json({ id: r.rows[0].id, question: r.rows[0].question, len: r.rows[0].answer.length });
 });
 
 app.post('/api/check', async (req, res) => {
@@ -63,8 +74,10 @@ app.post('/api/add-hints', async (req, res) => {
   res.json({ success: true });
 });
 
+// Обновленная админка с категорией
 app.post('/api/riddles', async (req, res) => {
-  await pool.query('INSERT INTO public.riddles (question, answer) VALUES ($1, $2)', [req.body.question, req.body.answer]);
+  const { question, answer, category } = req.body;
+  await pool.query('INSERT INTO public.riddles (question, answer, category) VALUES ($1, $2, $3)', [question, answer, category || 'лёгкие']);
   res.json({ success: true });
 });
 
