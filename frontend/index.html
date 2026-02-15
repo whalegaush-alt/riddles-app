@@ -18,9 +18,8 @@
 
     <div id="game-screen">
         <div class="header">
-            <div class="stat-card">МЕСТО<span id="rank">-</span></div>
-            <div class="stat-card">БАЛЛЫ<span id="score">0</span></div>
-            <div class="stat-card">ЛАМПЫ<span id="hints">0</span></div>
+            <div class="stat-card">РЕЙТИНГ<span id="rank">-</span></div>
+            <div class="stat-card">ПОДСКАЗКИ<span id="hints">0</span></div>
         </div>
         <div class="question-box" id="q-text">Загрузка...</div>
         <div class="boxes" id="box-container"></div>
@@ -50,7 +49,6 @@
         const qBox = document.getElementById('q-text');
         qBox.classList.remove('question-success', 'question-error');
         
-        // Показываем все кнопки для нового вопроса
         document.getElementById('b-hint').style.display = 'block';
         document.getElementById('b-check').style.display = 'block';
         document.getElementById('b-reveal').style.display = 'block';
@@ -95,7 +93,6 @@
         if(d.success) {
             tg.HapticFeedback.notificationOccurred('success');
             qBox.classList.add('question-success');
-            // СКРЫВАЕМ ВСЁ КРОМЕ "ДАЛЬШЕ"
             document.getElementById('b-check').style.display = 'none';
             document.getElementById('b-reveal').style.display = 'none';
             document.getElementById('b-hint').style.display = 'none';
@@ -111,7 +108,7 @@
     async function useHint() {
         const hText = document.getElementById('hints').innerText;
         if(parseInt(hText) <= 0) {
-            tg.showConfirm("Магия кончилась! Посмотреть рекламу (+3 лампы)?", async (ok) => {
+            tg.showConfirm("Магия кончилась! Добавить +3 подсказки?", async (ok) => {
                 if(ok) {
                     await fetch('/api/add-hints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
                     updateStats();
@@ -130,7 +127,6 @@
         });
         const d = await r.json();
         document.getElementById('rank').innerText = d.rank;
-        document.getElementById('score').innerText = d.score;
         document.getElementById('hints').innerText = d.hints;
     }
 
