@@ -3,30 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Magic Menu</title>
+    <title>Волшебные Загадки</title>
     <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        /* Дополнительные стили для меню */
-        #menu-screen { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; margin-top: 50px; }
-        #game-screen { display: none; width: 100%; flex-direction: column; align-items: center; }
-        .menu-btn { 
-            padding: 25px; border-radius: 25px; border: none; color: white; font-weight: 900; font-size: 18px; 
-            box-shadow: 0 8px 0 rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s;
-        }
-        .btn-easy { background: #4cd137; }
-        .btn-hard { background: #e84118; }
-        .btn-trick { background: #f39c12; }
-        .btn-back { background: #6c757d; margin-top: 20px; width: 100px; padding: 10px; font-size: 12px; }
-    </style>
 </head>
 <body>
 
     <div id="menu-screen">
-        <h1 style="color: white; text-shadow: 2px 2px 0 rgba(0,0,0,0.2);">Выбери уровень ✨</h1>
-        <button class="menu-btn btn-easy" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄<br><small>(Лёгкие)</small></button>
-        <button class="menu-btn btn-hard" onclick="startGame('сложные')">ДРАКОНЬЯ ГОРА 🌋<br><small>(Сложные)</small></button>
-        <button class="menu-btn btn-trick" onclick="startGame('с подвохом')">ЗЕРКАЛЬНЫЙ ЗАМОК 🔮<br><small>(С подвохом)</small></button>
+        <h1 style="color: white; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">ВЫБЕРИ УРОВЕНЬ</h1>
+        <button class="menu-btn btn-easy" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄</button>
+        <button class="menu-btn btn-hard" onclick="startGame('сложные')">ГОРЫ ДРАКОНА 🌋</button>
+        <button class="menu-btn btn-trick" onclick="startGame('с подвохом')">ТАЙНЫЙ ЗАМОК 🔮</button>
     </div>
 
     <div id="game-screen">
@@ -35,27 +22,22 @@
             <div class="stat-card">БАЛЛЫ<span id="score">0</span></div>
             <div class="stat-card">ЛАМПЫ<span id="hints">0</span></div>
         </div>
-        <div class="question-box" id="q-text">...</div>
+        <div class="question-box" id="q-text">Загрузка...</div>
         <div class="boxes" id="box-container"></div>
         <div class="keyboard" id="kb"></div>
         <div class="actions">
-            <button class="btn btn-hint" onclick="useHint()">💡</button>
-            <button id="b-check" class="btn btn-check" onclick="check()">ПРОВЕРИТЬ!</button>
+            <button id="b-hint" class="btn btn-hint" onclick="useHint()">💡 ПОДСКАЗКА</button>
+            <button id="b-check" class="btn btn-check" onclick="check()">ПРОВЕРИТЬ</button>
             <button id="b-reveal" class="btn btn-reveal" onclick="reveal()">ОТВЕТ</button>
             <button id="b-next" class="btn btn-next" onclick="loadRiddle()">ДАЛЬШЕ ✨</button>
         </div>
-        <button class="btn btn-back" onclick="showMenu()">↩ МЕНЮ</button>
+        <button style="margin-top:20px; background:none; border:none; color:white; text-decoration:underline;" onclick="location.reload()">↩ В МЕНЮ</button>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
     let curRiddle = null, selIdx = 0, fullAns = "", currentCategory = "";
-
-    function showMenu() {
-        document.getElementById('menu-screen').style.display = 'flex';
-        document.getElementById('game-screen').style.display = 'none';
-    }
 
     function startGame(cat) {
         currentCategory = cat;
@@ -68,12 +50,14 @@
         const qBox = document.getElementById('q-text');
         qBox.classList.remove('question-success', 'question-error');
         
+        // Показываем все кнопки для нового вопроса
+        document.getElementById('b-hint').style.display = 'block';
+        document.getElementById('b-check').style.display = 'block';
+        document.getElementById('b-reveal').style.display = 'block';
+        document.getElementById('b-next').style.display = 'none';
+
         const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCategory)}`);
-        if (!r.ok) {
-            tg.showAlert("В этой категории пока нет загадок!");
-            showMenu();
-            return;
-        }
+        if(!r.ok) { tg.showAlert("Загадки кончились!"); location.reload(); return; }
         curRiddle = await r.json();
         qBox.innerText = curRiddle.question;
         
@@ -94,15 +78,51 @@
             cont.appendChild(b);
         }
         selIdx = 0;
-        document.getElementById('b-next').style.display = 'none';
-        document.getElementById('b-check').style.display = 'block';
-        document.getElementById('b-reveal').style.display = 'block';
         updateStats();
     }
 
-    // Вставь сюда остальные функции (createKb, check, useHint, reveal, updateStats) из прошлого ответа...
-    // [Они остаются без изменений]
-    
+    async function check() {
+        let ans = "";
+        for(let i=0; i<curRiddle.len; i++) ans += document.getElementById('b-'+i).innerText;
+        const qBox = document.getElementById('q-text');
+
+        const res = await fetch('/api/check', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({user_id: tg.initDataUnsafe.user.id, riddle_id: curRiddle.id, answer: ans})
+        });
+        const d = await res.json();
+        
+        if(d.success) {
+            tg.HapticFeedback.notificationOccurred('success');
+            qBox.classList.add('question-success');
+            // СКРЫВАЕМ ВСЁ КРОМЕ "ДАЛЬШЕ"
+            document.getElementById('b-check').style.display = 'none';
+            document.getElementById('b-reveal').style.display = 'none';
+            document.getElementById('b-hint').style.display = 'none';
+            document.getElementById('b-next').style.display = 'block';
+            updateStats();
+        } else {
+            tg.HapticFeedback.notificationOccurred('error');
+            qBox.classList.add('question-error');
+            setTimeout(() => qBox.classList.remove('question-error'), 800);
+        }
+    }
+
+    async function useHint() {
+        const hText = document.getElementById('hints').innerText;
+        if(parseInt(hText) <= 0) {
+            tg.showConfirm("Магия кончилась! Посмотреть рекламу (+3 лампы)?", async (ok) => {
+                if(ok) {
+                    await fetch('/api/add-hints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
+                    updateStats();
+                }
+            }); return;
+        }
+        document.getElementById('b-'+selIdx).innerText = fullAns[selIdx];
+        await fetch('/api/use-hint', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
+        updateStats();
+    }
+
     async function updateStats() {
         const r = await fetch('/api/user-info', {
             method: 'POST', headers: {'Content-Type': 'application/json'},
@@ -116,7 +136,6 @@
 
     function createKb() {
         const k = document.getElementById('kb');
-        k.innerHTML = '';
         "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split('').forEach(l => {
             const d = document.createElement('div');
             d.className = 'key'; d.innerText = l;
@@ -141,46 +160,6 @@
             }
         };
         k.appendChild(del);
-    }
-
-    async function check() {
-        let ans = "";
-        for(let i=0; i<curRiddle.len; i++) ans += document.getElementById('b-'+i).innerText;
-        const qBox = document.getElementById('q-text');
-
-        const res = await fetch('/api/check', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({user_id: tg.initDataUnsafe.user.id, riddle_id: curRiddle.id, answer: ans})
-        });
-        const d = await res.json();
-        
-        if(d.success) {
-            tg.HapticFeedback.notificationOccurred('success');
-            qBox.classList.add('question-success');
-            document.getElementById('b-check').style.display = 'none';
-            document.getElementById('b-reveal').style.display = 'none';
-            document.getElementById('b-next').style.display = 'block';
-            updateStats();
-        } else {
-            tg.HapticFeedback.notificationOccurred('error');
-            qBox.classList.add('question-error');
-            setTimeout(() => qBox.classList.remove('question-error'), 800);
-        }
-    }
-
-    async function useHint() {
-        const hText = document.getElementById('hints').innerText;
-        if(parseInt(hText) <= 0) {
-            tg.showConfirm("Магия закончилась! Посмотреть рекламу (+3 💡)?", async (ok) => {
-                if(ok) {
-                    await fetch('/api/add-hints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
-                    updateStats();
-                }
-            }); return;
-        }
-        document.getElementById('b-'+selIdx).innerText = fullAns[selIdx];
-        await fetch('/api/use-hint', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
-        updateStats();
     }
 
     function reveal() {
