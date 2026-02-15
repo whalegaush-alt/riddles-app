@@ -5,135 +5,86 @@ const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
 const app = express();
-
-// Настройка подключения к базе данных
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
-  ssl: {
-    rejectUnauthorized: false
-  }
+  ssl: { rejectUnauthorized: false }
 });
 
-// Настройка Telegram-бота
 const bot = new Telegraf(process.env.BOT_TOKEN);
-const ADMIN_ID = process.env.ADMIN_ID; // Твой ID из переменных Railway
+const ADMIN_ID = process.env.ADMIN_ID;
 
-// Обработка команды /start
 bot.start((ctx) => {
   const webAppUrl = process.env.URL;
-  const buttons = [
-    Markup.button.webApp('Играть 🧩', webAppUrl)
-  ];
-
-  // Если зашел админ, добавляем кнопку админки
+  const buttons = [Markup.button.webApp('Играть 🧩', webAppUrl)];
   if (ctx.from.id.toString() === ADMIN_ID) {
-    buttons.push(Markup.button.url('Админка (Добавить) ⚙️', `${webAppUrl}/admin.html`));
+    buttons.push(Markup.button.url('Админка ⚙️', `${webAppUrl}/admin.html`));
   }
-
-  ctx.reply(
-    `Привет, ${ctx.from.first_name}! Разгадай все загадки и стань самым умным в рейтинге!`,
-    Markup.inlineKeyboard(buttons, { columns: 1 })
-  );
+  ctx.reply(`Привет! Разгадывай загадки, копи баллы и стань первым в рейтинге!`, 
+    Markup.inlineKeyboard(buttons, { columns: 1 }));
 });
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// --- API ЭНДПОИНТЫ ---
+// --- API ---
 
-// 1. Получить случайную загадку
+// Получить инфо о пользователе (баллы, подсказки, место)
+app.post('/api/user-info', async (req, res) => {
+  const { user_id, username } = req.body;
+  try {
+    await pool.query(`
+      INSERT INTO public.users (user_id, username, score, hints) 
+      VALUES ($1, $2, 0, 3) ON CONFLICT (user_id) DO UPDATE SET username = $2
+    `, [user_id, username]);
+
+    const data = await pool.query(`
+      SELECT score, hints, 
+      (SELECT COUNT(*) + 1 FROM public.users u2 WHERE u2.score > u1.score) as rank
+      FROM public.users u1 WHERE user_id = $1
+    `, [user_id]);
+    res.json(data.rows[0]);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
 app.get('/api/riddle', async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, question, LENGTH(answer) as len FROM public.riddles ORDER BY RANDOM() LIMIT 1'
-    );
-    res.json(result.rows[0]);
-  } catch (err) {
-    console.error('Ошибка получения загадки:', err.message);
-    res.status(500).json({ error: err.message });
-  }
+    const result = await pool.query('SELECT id, question, answer FROM public.riddles ORDER BY RANDOM() LIMIT 1');
+    const riddle = result.rows[0];
+    res.json({ id: riddle.id, question: riddle.question, len: riddle.answer.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 2. Проверка ответа и начисление баллов
 app.post('/api/check', async (req, res) => {
-  const { user_id, username, riddle_id, answer } = req.body;
+  const { user_id, riddle_id, answer } = req.body;
   try {
     const result = await pool.query('SELECT answer FROM public.riddles WHERE id = $1', [riddle_id]);
-    
-    if (!result.rows[0]) return res.status(404).json({ error: 'Загадка не найдена' });
-
-    // Сравниваем ответы в верхнем регистре
     if (result.rows[0].answer.toUpperCase() === answer.toUpperCase()) {
-      // Добавляем 10 баллов пользователю
-      await pool.query(`
-        INSERT INTO public.users (user_id, username, score) 
-        VALUES ($1, $2, 10)
-        ON CONFLICT (user_id) 
-        DO UPDATE SET score = users.score + 10, username = $2
-      `, [user_id, username]);
-      
+      await pool.query('UPDATE public.users SET score = score + 10 WHERE user_id = $1', [user_id]);
       res.json({ success: true });
-    } else {
-      res.json({ success: false });
-    }
-  } catch (err) {
-    console.error('Ошибка проверки ответа:', err.message);
-    res.status(500).json({ error: err.message });
-  }
+    } else { res.json({ success: false }); }
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// 3. Получить правильный ответ (для кнопки "Узнать ответ")
 app.get('/api/reveal', async (req, res) => {
-  const { id } = req.query;
-  try {
-    const result = await pool.query('SELECT answer FROM public.riddles WHERE id = $1', [id]);
-    if (result.rows[0]) {
-      res.json(result.rows[0]);
-    } else {
-      res.status(404).json({ error: 'Не найдено' });
-    }
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await pool.query('SELECT answer FROM public.riddles WHERE id = $1', [req.query.id]);
+  res.json(result.rows[0]);
 });
 
-// 4. Получить топ-5 игроков
-app.get('/api/leaderboard', async (req, res) => {
-  try {
-    const result = await pool.query(
-      'SELECT username, score FROM public.users ORDER BY score DESC LIMIT 5'
-    );
-    res.json(result.rows);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+app.post('/api/use-hint', async (req, res) => {
+  await pool.query('UPDATE public.users SET hints = hints - 1 WHERE user_id = $1 AND hints > 0', [req.body.user_id]);
+  res.json({ success: true });
 });
 
-// 5. Добавление новой загадки через админку
+app.post('/api/add-hints', async (req, res) => {
+  await pool.query('UPDATE public.users SET hints = hints + 3 WHERE user_id = $1', [req.body.user_id]);
+  res.json({ success: true });
+});
+
 app.post('/api/riddles', async (req, res) => {
-  const { question, answer } = req.body;
-  try {
-    await pool.query(
-      'INSERT INTO public.riddles (question, answer) VALUES ($1, $2)',
-      [question, answer]
-    );
-    res.json({ success: true });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  await pool.query('INSERT INTO public.riddles (question, answer) VALUES ($1, $2)', [req.body.question, req.body.answer]);
+  res.json({ success: true });
 });
 
-// Запуск сервера
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => {
-  console.log(`--- Express сервер запущен на порту ${PORT} ---`);
-});
-
-// Запуск бота
-bot.launch()
-  .then(() => console.log('--- Telegram-бот запущен ---'))
-  .catch((err) => console.error('Ошибка бота:', err));
-
-// Мягкая остановка
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+app.listen(PORT, () => console.log(`Server started`));
+bot.launch();
