@@ -1,0 +1,145 @@
+:root {
+    --disney-blue: #248bcf;
+    --disney-dark-blue: #1a6fa3;
+    --disney-yellow: #ffcc00;
+    --disney-gold: #e1b300;
+    --disney-green: #4cd137;
+    --disney-dark-green: #3bad2a;
+    --disney-red: #e84118;
+    --disney-white: #ffffff;
+    --bg-gradient: linear-gradient(180deg, #74b9ff 0%, #a29bfe 100%);
+}
+
+body {
+    font-family: 'Arial Rounded MT Bold', 'Helvetica Round', sans-serif;
+    background: var(--bg-gradient);
+    background-attachment: fixed;
+    margin: 0;
+    padding: 15px;
+    color: #2f3542;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+/* Шапка профиля */
+.header {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    background: rgba(255, 255, 255, 0.95);
+    padding: 15px;
+    border-radius: 25px;
+    box-shadow: 0 8px 0 rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+    border: 3px solid var(--disney-white);
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+}
+
+.stat-card { 
+    display: flex; 
+    flex-direction: column; 
+    font-size: 11px; 
+    font-weight: 900; 
+    text-transform: uppercase;
+    text-align: center;
+}
+
+.stat-card span { 
+    font-size: 18px; 
+    color: var(--disney-blue); 
+}
+
+/* Карточка вопроса */
+.question-box {
+    background: var(--disney-white);
+    padding: 30px 20px;
+    border-radius: 30px;
+    box-shadow: 0 10px 0 rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+    font-size: 20px;
+    font-weight: bold;
+    text-align: center;
+    border: 5px solid var(--disney-blue);
+    width: 100%;
+    max-width: 400px;
+    box-sizing: border-box;
+    transition: all 0.3s ease;
+}
+
+.question-success { 
+    background: var(--disney-green) !important; 
+    color: white !important; 
+    border-color: #fff !important;
+    box-shadow: 0 10px 0 var(--disney-dark-green);
+}
+
+.question-error { 
+    background: var(--disney-red) !important; 
+    color: white !important; 
+    border-color: #fff !important;
+    animation: shake 0.4s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-10px); }
+    75% { transform: translateX(10px); }
+}
+
+/* Буквы */
+.boxes { display: flex; justify-content: center; gap: 8px; margin-bottom: 25px; flex-wrap: wrap; }
+.letter {
+    width: 40px;
+    height: 48px;
+    background: white;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 900;
+    box-shadow: 0 6px 0 #bdc3c7;
+    cursor: pointer;
+    border: 3px solid transparent;
+}
+.letter.active { 
+    border-color: var(--disney-yellow); 
+    transform: translateY(-5px); 
+    box-shadow: 0 11px 0 var(--disney-yellow); 
+}
+
+/* Клавиатура */
+.keyboard {
+    display: grid;
+    grid-template-columns: repeat(8, 1fr);
+    gap: 6px;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 12px;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 450px;
+}
+
+.key {
+    background: white;
+    padding: 12px 0;
+    border-radius: 10px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 0 #ced4da;
+    cursor: pointer;
+}
+.key:active { transform: translateY(2px); box-shadow: 0 2px 0 #ced4da; }
+.key.del { grid-column: span 2; background: #ff7675; color: white; box-shadow: 0 4px 0 #d63031; }
+
+/* Кнопки */
+.actions { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; width: 100%; max-width: 400px; margin-top: 20px;}
+.btn { border: none; border-radius: 18px; padding: 15px 5px; color: white; font-weight: 900; cursor: pointer; box-shadow: 0 5px 0 rgba(0,0,0,0.15); }
+.btn-hint { background: #a29bfe; }
+.btn-check { background: var(--disney-green); }
+.btn-reveal { background: var(--disney-yellow); color: #634d00; }
+.btn-next { background: var(--disney-blue); grid-column: span 3; display: none; font-size: 18px; padding: 20px; }
