@@ -3,80 +3,53 @@
     --disney-yellow: #ffcc00;
     --disney-green: #4cd137;
     --disney-red: #e84118;
-    --bg-gradient: linear-gradient(180deg, #74b9ff 0%, #a29bfe 100%);
 }
 
 body {
     font-family: 'Arial Rounded MT Bold', sans-serif;
-    background: var(--bg-gradient);
+    background: linear-gradient(180deg, #74b9ff 0%, #a29bfe 100%);
     background-attachment: fixed;
-    margin: 0; padding: 15px;
-    color: #2f3542; min-height: 100vh;
-    display: flex; flex-direction: column; align-items: center;
+    margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center;
 }
 
-/* Меню выбора уровней */
-#menu-screen { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 400px; margin-top: 50px; }
-.menu-btn { 
-    padding: 25px; border-radius: 25px; border: none; color: white; font-weight: 900; font-size: 18px; 
-    box-shadow: 0 8px 0 rgba(0,0,0,0.1); cursor: pointer; transition: 0.2s;
-}
-.btn-easy { background: #4cd137; }
-.btn-hard { background: #e84118; }
-.btn-trick { background: #f39c12; }
-
-/* Игровой экран */
-#game-screen { display: none; width: 100%; flex-direction: column; align-items: center; }
-
+/* Шапка */
 .header {
-    display: grid; grid-template-columns: 1fr 1fr; /* 2 колонки: Рейтинг и Подсказки */
-    gap: 15px; background: rgba(255, 255, 255, 0.95); padding: 15px;
-    border-radius: 20px; box-shadow: 0 6px 0 rgba(0,0,0,0.1);
-    margin-bottom: 20px; width: 100%; max-width: 400px;
+    display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+    background: white; padding: 15px; border-radius: 20px;
+    width: 100%; max-width: 400px; box-sizing: border-box;
 }
-
 .stat-card { text-align: center; font-size: 12px; font-weight: 900; color: #57606f; }
 .stat-card span { display: block; font-size: 20px; color: var(--disney-blue); }
 
+/* Загадка */
 .question-box {
     background: white; padding: 25px; border-radius: 25px;
-    box-shadow: 0 8px 0 rgba(0,0,0,0.1); margin-bottom: 20px;
-    font-size: 20px; font-weight: bold; text-align: center;
-    border: 4px solid var(--disney-blue); width: 100%; max-width: 400px;
-}
-
-.question-success { background: var(--disney-green) !important; color: white; border-color: white; }
-.question-error { background: var(--disney-red) !important; color: white; border-color: white; animation: shake 0.4s; }
-
-@keyframes shake {
-    0%, 100% { transform: translateX(0); }
-    25% { transform: translateX(-8px); }
-    75% { transform: translateX(8px); }
+    margin: 20px 0; font-size: 20px; font-weight: bold; text-align: center;
+    border: 4px solid var(--disney-blue); width: 100%; max-width: 400px; box-sizing: border-box;
 }
 
 .boxes { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
 .letter {
-    width: 38px; height: 45px; background: white; border-radius: 12px;
+    width: 40px; height: 50px; background: white; border-radius: 12px;
     display: flex; align-items: center; justify-content: center;
-    font-size: 22px; font-weight: 900; box-shadow: 0 5px 0 #ced4da;
-    cursor: pointer; border: 2px solid transparent;
+    font-size: 24px; font-weight: 900; box-shadow: 0 5px 0 #ced4da;
 }
-.letter.active { border-color: var(--disney-yellow); transform: translateY(-3px); box-shadow: 0 8px 0 var(--disney-yellow); }
+.letter.active { border: 3px solid var(--disney-yellow); }
 
+/* КЛАВИАТУРА ЦЕНТРИРОВАННАЯ */
 .keyboard {
-    display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px;
-    background: rgba(255, 255, 255, 0.2); padding: 10px; border-radius: 20px;
+    display: grid; grid-template-columns: repeat(8, 1fr); gap: 6px;
     width: 100%; max-width: 450px;
 }
-.key { 
-    background: white; padding: 12px 0; border-radius: 10px; font-weight: bold; 
+.key {
+    background: white; border-radius: 10px; font-weight: bold; height: 45px;
     box-shadow: 0 4px 0 #bdc3c7; cursor: pointer;
-    display: flex; align-items: center; justify-content: center; /* Буквы по центру */
+    display: flex; align-items: center; justify-content: center; /* Центр */
 }
-.key:active { transform: translateY(2px); box-shadow: 0 2px 0 #bdc3c7; }
-.key.del { grid-column: span 2; background: #ff7675; color: white; }
+.key.del { grid-column: span 2; background: #ff7675; }
 
-.actions { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; width: 100%; max-width: 400px; margin-top: 15px; }
+/* Кнопки */
+.actions { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 10px; width: 100%; max-width: 400px; margin-top: 20px; }
 .btn { border: none; border-radius: 15px; padding: 15px 5px; color: white; font-weight: 900; cursor: pointer; }
 .btn-hint { background: #a29bfe; }
 .btn-check { background: var(--disney-green); }
