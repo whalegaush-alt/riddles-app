@@ -3,126 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Волшебные Загадки</title>
+    <title>Disney Quiz</title>
+    <link rel="stylesheet" href="style.css">
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
-    <style>
-        :root {
-            --disney-blue: #248bcf;
-            --disney-yellow: #ffcc00;
-            --disney-green: #4cd137;
-            --disney-red: #e84118;
-            --disney-white: #ffffff;
-            --bg-gradient: linear-gradient(180deg, #74b9ff 0%, #a29bfe 100%);
-        }
-
-        body {
-            font-family: 'Comic Sans MS', 'Chalkboard SE', sans-serif;
-            background: var(--bg-gradient);
-            background-attachment: fixed;
-            margin: 0;
-            padding: 15px;
-            color: #2f3542;
-            min-height: 100vh;
-        }
-
-        /* Шапка с профилем */
-        .header {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 12px;
-            border-radius: 20px;
-            box-shadow: 0 8px 0 rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            border: 3px solid var(--disney-white);
-        }
-        .stat-card { display: flex; flex-direction: column; font-size: 12px; font-weight: bold; }
-        .stat-card span { font-size: 16px; color: var(--disney-blue); }
-
-        /* Карточка с вопросом */
-        .question-box {
-            background: var(--disney-white);
-            padding: 25px;
-            border-radius: 25px;
-            box-shadow: 0 10px 0 rgba(0,0,0,0.1);
-            margin-bottom: 20px;
-            font-size: 20px;
-            font-weight: bold;
-            line-height: 1.4;
-            border: 4px solid var(--disney-blue);
-            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-        .question-success { background: var(--disney-green) !important; color: white !important; border-color: white !important; transform: scale(1.05); }
-        .question-error { background: var(--disney-red) !important; color: white !important; border-color: white !important; }
-
-        /* Ячейки букв */
-        .boxes { display: flex; justify-content: center; gap: 8px; margin-bottom: 20px; flex-wrap: wrap; }
-        .letter {
-            width: 40px;
-            height: 45px;
-            background: white;
-            border-radius: 12px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            font-weight: 900;
-            box-shadow: 0 5px 0 #ced4da;
-            cursor: pointer;
-            transition: 0.2s;
-            border: 2px solid transparent;
-        }
-        .letter.active { border-color: var(--disney-yellow); transform: translateY(-5px); box-shadow: 0 10px 0 var(--disney-yellow); }
-
-        /* Клавиатура */
-        .keyboard {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 6px;
-            background: rgba(255,255,255,0.3);
-            padding: 12px;
-            border-radius: 20px;
-            backdrop-filter: blur(5px);
-        }
-        .key {
-            background: white;
-            padding: 12px 0;
-            border-radius: 10px;
-            font-weight: bold;
-            box-shadow: 0 4px 0 #bdc3c7;
-            cursor: pointer;
-            transition: 0.1s;
-        }
-        .key:active { transform: translateY(3px); box-shadow: 0 1px 0 #bdc3c7; }
-        .key.del { grid-column: span 2; background: #ff7675; color: white; box-shadow: 0 4px 0 #d63031; }
-
-        /* Кнопки действий */
-        .actions { display: grid; grid-template-columns: 1fr 2fr 1fr; gap: 12px; margin-top: 25px; }
-        .btn {
-            border: none;
-            border-radius: 18px;
-            padding: 15px 5px;
-            color: white;
-            font-weight: 900;
-            font-size: 14px;
-            cursor: pointer;
-            box-shadow: 0 6px 0 rgba(0,0,0,0.2);
-            transition: 0.2s;
-        }
-        .btn:active { transform: translateY(3px); box-shadow: 0 3px 0 rgba(0,0,0,0.2); }
-        .btn-hint { background: #a29bfe; }
-        .btn-check { background: var(--disney-green); font-size: 16px; }
-        .btn-reveal { background: var(--disney-yellow); color: #634d00; }
-        .btn-next { background: var(--disney-blue); grid-column: span 3; display: none; font-size: 18px; }
-    </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="stat-card">🏆 МЕСТО<span id="rank">-</span></div>
-        <div class="stat-card">⭐️ БАЛЛЫ<span id="score">0</span></div>
-        <div class="stat-card">💡 ЛАМПЫ<span id="hints">0</span></div>
+        <div class="stat-card">МЕСТО<span id="rank">-</span></div>
+        <div class="stat-card">БАЛЛЫ<span id="score">0</span></div>
+        <div class="stat-card">ЛАМПЫ<span id="hints">0</span></div>
     </div>
 
     <div class="question-box" id="q-text">Загрузка магии...</div>
@@ -133,7 +23,7 @@
         <button class="btn btn-hint" onclick="useHint()">💡 ПОДСКАЗКА</button>
         <button id="b-check" class="btn btn-check" onclick="check()">ПРОВЕРИТЬ!</button>
         <button id="b-reveal" class="btn btn-reveal" onclick="reveal()">ОТВЕТ</button>
-        <button id="b-next" class="btn btn-next" onclick="load()">СЛЕДУЮЩИЙ УРОВЕНЬ 🏰</button>
+        <button id="b-next" class="btn btn-next" onclick="load()">ДАЛЬШЕ ✨</button>
     </div>
 
 <script>
@@ -161,7 +51,8 @@
         qBox.innerText = curRiddle.question;
         
         const ra = await fetch('/api/reveal?id='+curRiddle.id);
-        fullAns = (await ra.json()).answer.toUpperCase();
+        const data = await ra.json();
+        fullAns = data.answer.toUpperCase();
         
         const cont = document.getElementById('box-container');
         cont.innerHTML = '';
@@ -236,16 +127,12 @@
     }
 
     async function useHint() {
-        const h = parseInt(document.getElementById('hints').innerText);
-        if(h <= 0) {
-            tg.showConfirm("Магия закончилась! Посмотреть свиток рекламы (+3 💡)?", async (ok) => {
+        const hText = document.getElementById('hints').innerText;
+        if(parseInt(hText) <= 0) {
+            tg.showConfirm("Магия кончилась! Смотреть рекламу (+3 лампы)?", async (ok) => {
                 if(ok) {
-                    tg.showScanQrPopup({text: "Загрузка магии..."});
-                    setTimeout(async () => {
-                        tg.closeScanQrPopup();
-                        await fetch('/api/add-hints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
-                        updateStats();
-                    }, 2000);
+                    await fetch('/api/add-hints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
+                    updateStats();
                 }
             }); return;
         }
@@ -255,7 +142,7 @@
     }
 
     function reveal() {
-        tg.showConfirm(`Волшебный ответ: ${fullAns}. Идем дальше?`, (ok) => { if(ok) load(); });
+        tg.showConfirm(`Ответ: ${fullAns}. Идем дальше?`, (ok) => { if(ok) load(); });
     }
 
     createKb(); load();
