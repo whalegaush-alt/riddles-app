@@ -4,20 +4,23 @@ const { Pool } = require('pg');
 const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
-const app = express(); // Переменная 'app' должна быть создана здесь!
+// 1. Сначала инициализируем Express
+const app = express();
 
+// 2. Настройка базы данных
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
+// 3. Инициализация бота
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_ID;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// --- ИГРОВОЕ API ---
+// --- API ЭНДПОИНТЫ ---
 
 app.post('/api/user-info', async (req, res) => {
   const { user_id, username } = req.body;
@@ -55,55 +58,53 @@ app.post('/api/check', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- АДМИН API ---
+// --- АДМИН-ФУНКЦИИ ---
 
 app.get('/api/admin/riddles', async (req, res) => {
-  try {
-    const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
-    res.json(r.rows);
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
+  res.json(r.rows);
 });
 
 app.post('/api/riddles', async (req, res) => {
   const { question, answer, category, explanation } = req.body;
-  try {
-    await pool.query('INSERT INTO public.riddles (question, answer, category, explanation) VALUES ($1, $2, $3, $4)', [question, answer.toUpperCase().trim(), category, explanation]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  await pool.query('INSERT INTO public.riddles (question, answer, category, explanation) VALUES ($1, $2, $3, $4)', [question, answer.toUpperCase().trim(), category, explanation]);
+  res.json({ success: true });
 });
 
 app.put('/api/riddles/:id', async (req, res) => {
   const { question, answer, category, explanation } = req.body;
-  try {
-    await pool.query('UPDATE public.riddles SET question=$1, answer=$2, category=$3, explanation=$4 WHERE id=$5', [question, answer.toUpperCase().trim(), category, explanation, req.params.id]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  await pool.query('UPDATE public.riddles SET question=$1, answer=$2, category=$3, explanation=$4 WHERE id=$5', [question, answer.toUpperCase().trim(), category, explanation, req.params.id]);
+  res.json({ success: true });
 });
 
 app.delete('/api/admin/riddles/:id', async (req, res) => {
-  try {
-    await pool.query('DELETE FROM public.riddles WHERE id = $1', [req.params.id]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  await pool.query('DELETE FROM public.riddles WHERE id = $1', [req.params.id]);
+  res.json({ success: true });
 });
 
 app.post('/api/use-hint', async (req, res) => {
-  try {
-    await pool.query('UPDATE public.users SET hints = hints - 1 WHERE user_id = $1 AND hints > 0', [req.body.user_id]);
-    res.json({ success: true });
-  } catch (err) { res.status(500).json({ error: err.message }); }
+  await pool.query('UPDATE public.users SET hints = hints - 1 WHERE user_id = $1 AND hints > 0', [req.body.user_id]);
+  res.json({ success: true });
 });
 
-// --- ТЕЛЕГРАМ БОТ ---
+// --- ЛОГИКА БОТА ---
 
 bot.start((ctx) => {
-  ctx.reply(`Викторина готова! ✨`, Markup.inlineKeyboard([
+  ctx.reply(`Загадки ждут тебя! ✨`, Markup.inlineKeyboard([
     [Markup.button.webApp('ИГРАТЬ 🏰', process.env.URL)],
     ...(ctx.from.id.toString() === ADMIN_ID ? [[Markup.button.url('АДМИНКА ⚙️', `${process.env.URL}/admin.html`)]] : [])
   ]));
 });
 
+// Запуск сервера
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`🚀 Server started on port ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Сервер запущен на порту ${PORT}`));
 
-bot.launch().catch(err => console.error("Bot launch error:", err));
+// Запуск бота с обработкой ошибок
+bot.launch({
+    dropPendingUpdates: true // Это поможет избежать конфликтов при перезагрузке
+}).then(() => console.log('🤖 Бот успешно запущен'))
+  .catch(err => console.error('❌ Ошибка запуска бота:', err));
+
+process.once('SIGINT', () => bot.stop('SIGINT'));
+process.once('SIGTERM', () => bot.stop('SIGTERM'));
