@@ -1,132 +1,14 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <title>Управление Магией ✨</title>
-    <style>
-        body { font-family: 'Segoe UI', sans-serif; background: #f0f2f5; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; margin-bottom: 20px; }
-        h2 { margin-top: 0; color: #248bcf; }
-        input, textarea, select { width: 100%; padding: 12px; margin: 8px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btns-row { display: flex; gap: 10px; }
-        .btn-main { background: #248bcf; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-cancel { background: #adb5bd; width: 30%; }
-        
-        table { width: 100%; max-width: 900px; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #248bcf; color: white; }
-        .actions-btns { display: flex; gap: 5px; }
-        .btn-sm { padding: 8px 12px; border: none; border-radius: 6px; cursor: pointer; color: white; font-weight: bold; font-size: 12px; }
-        .edit { background: #f39c12; }
-        .del { background: #e84118; }
-    </style>
-</head>
-<body>
+<textarea id="explanation" rows="2" placeholder="Пояснение (для загадок с подвохом)..."></textarea>
 
-    <div class="card">
-        <h2 id="form-title">Добавить загадку 🔮</h2>
-        <input type="hidden" id="edit-id">
-        <select id="category">
-            <option value="лёгкие">🍄 Лёгкие</option>
-            <option value="сложные">🌋 Сложные</option>
-            <option value="с подвохом">🔮 С подвохом</option>
-        </select>
-        <textarea id="question" rows="3" placeholder="Текст загадки..."></textarea>
-        <input type="text" id="answer" placeholder="ОТВЕТ">
-        <div class="btns-row">
-            <button id="btn-save" class="btn-main" onclick="saveRiddle()">СОХРАНИТЬ</button>
-            <button id="btn-cancel" class="btn-main btn-cancel" style="display:none;" onclick="cancelEdit()">ОТМЕНА</button>
-        </div>
-    </div>
+<script>
+// В функции saveRiddle добавь:
+const body = {
+    question: document.getElementById('question').value,
+    answer: document.getElementById('answer').value,
+    category: document.getElementById('category').value,
+    explanation: document.getElementById('explanation').value // <---
+};
 
-    <table>
-        <thead>
-            <tr>
-                <th>Категория</th>
-                <th>Загадка</th>
-                <th>Ответ</th>
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody id="riddles-list"></tbody>
-    </table>
-
-    <script>
-        let allRiddles = [];
-
-        window.onload = loadRiddles;
-
-        async function loadRiddles() {
-            const res = await fetch('/api/admin/riddles');
-            allRiddles = await res.json();
-            const list = document.getElementById('riddles-list');
-            list.innerHTML = '';
-
-            allRiddles.forEach(r => {
-                list.innerHTML += `
-                    <tr>
-                        <td><b>${r.category}</b></td>
-                        <td>${r.question.substring(0, 40)}...</td>
-                        <td><u>${r.answer}</u></td>
-                        <td class="actions-btns">
-                            <button class="btn-sm edit" onclick="editRiddle(${r.id})">✎</button>
-                            <button class="btn-sm del" onclick="deleteRiddle(${r.id})">✖</button>
-                        </td>
-                    </tr>
-                `;
-            });
-        }
-
-        async function saveRiddle() {
-            const id = document.getElementById('edit-id').value;
-            const body = {
-                question: document.getElementById('question').value,
-                answer: document.getElementById('answer').value,
-                category: document.getElementById('category').value
-            };
-
-            const url = id ? `/api/riddles/${id}` : '/api/riddles';
-            const method = id ? 'PUT' : 'POST';
-
-            const res = await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(body)
-            });
-
-            if (res.ok) {
-                cancelEdit();
-                loadRiddles();
-            } else { alert("Ошибка сохранения!"); }
-        }
-
-        function editRiddle(id) {
-            const r = allRiddles.find(item => item.id === id);
-            document.getElementById('edit-id').value = r.id;
-            document.getElementById('question').value = r.question;
-            document.getElementById('answer').value = r.answer;
-            document.getElementById('category').value = r.category;
-            
-            document.getElementById('form-title').innerText = "Изменить загадку 📝";
-            document.getElementById('btn-save').innerText = "ОБНОВИТЬ";
-            document.getElementById('btn-cancel').style.display = 'block';
-            window.scrollTo(0,0);
-        }
-
-        function cancelEdit() {
-            document.getElementById('edit-id').value = '';
-            document.getElementById('question').value = '';
-            document.getElementById('answer').value = '';
-            document.getElementById('form-title').innerText = "Добавить загадку 🔮";
-            document.getElementById('btn-save').innerText = "СОХРАНИТЬ";
-            document.getElementById('btn-cancel').style.display = 'none';
-        }
-
-        async function deleteRiddle(id) {
-            if (!confirm("Удалить?")) return;
-            await fetch(`/api/admin/riddles/${id}`, { method: 'DELETE' });
-            loadRiddles();
-        }
-    </script>
-</body>
-</html>
+// В функции editRiddle добавь:
+document.getElementById('explanation').value = r.explanation || '';
+</script>
