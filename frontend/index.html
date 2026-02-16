@@ -1,41 +1,98 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>Волшебные Загадки</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Riddles</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        :root { --main-blue: #248bcf; --win-green: #4cd137; --err-red: #e84118; }
+        body { 
+            font-family: 'Segoe UI', Roboto, sans-serif; 
+            background: #74b9ff; margin: 0; padding: 10px;
+            display: flex; flex-direction: column; align-items: center; 
+            min-height: 100vh; box-sizing: border-box; overflow: hidden;
+        }
+        
+        /* Меню */
+        #menu-screen { text-align: center; width: 100%; max-width: 360px; margin-top: 40px; }
+        .menu-btn { 
+            width: 100%; padding: 20px; margin: 10px 0; border-radius: 15px; border: none;
+            color: white; font-weight: bold; font-size: 18px; cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1); 
+        }
+
+        /* Игровой экран */
+        #game-screen { display: none; width: 100%; max-width: 400px; flex-direction: column; }
+        
+        .header { 
+            display: flex; justify-content: space-between; 
+            background: white; padding: 10px 20px; border-radius: 20px; margin-bottom: 15px;
+        }
+        .stat-card { text-align: center; flex: 1; }
+        .stat-card div { font-size: 10px; color: #888; font-weight: bold; }
+        .stat-card span { font-size: 18px; font-weight: 900; color: var(--main-blue); }
+
+        .question-box { 
+            background: white; padding: 20px; border-radius: 20px; text-align: center;
+            font-size: 18px; font-weight: bold; min-height: 60px; display: flex; align-items: center; justify-content: center;
+            border: 3px solid var(--main-blue); margin-bottom: 15px;
+        }
+
+        .boxes { display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
+        .letter { 
+            width: 35px; height: 45px; background: white; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; font-weight: 900; box-shadow: 0 4px 0 #ccc;
+        }
+        .letter.active { border: 2px solid #ffcc00; box-shadow: 0 4px 0 #ffcc00; }
+
+        .keyboard { 
+            display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; 
+            background: rgba(255,255,255,0.3); padding: 8px; border-radius: 15px;
+        }
+        .key { 
+            background: white; height: 40px; border-radius: 8px; font-weight: bold;
+            display: flex; align-items: center; justify-content: center; font-size: 14px;
+            box-shadow: 0 3px 0 #999; cursor: pointer;
+        }
+        .key.del { grid-column: span 2; background: #ff7675; color: white; }
+
+        .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
+        .btn { border: none; border-radius: 12px; padding: 15px 5px; color: white; font-weight: bold; font-size: 12px; }
+        #b-next { display: none; grid-column: span 3; background: var(--main-blue); font-size: 16px; }
+
+        .question-success { background: var(--win-green) !important; color: white; }
+    </style>
 </head>
 <body>
 
     <div id="menu-screen">
-        <h1 style="color: white; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.3);">ВЫБЕРИ УРОВЕНЬ</h1>
-        <button class="menu-btn btn-easy" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄</button>
-        <button class="menu-btn btn-hard" onclick="startGame('сложные')">ГОРЫ ДРАКОНА 🌋</button>
-        <button class="menu-btn btn-trick" onclick="startGame('с подвохом')">ТАЙНЫЙ ЗАМОК 🔮</button>
+        <h2 style="color: white;">ВЫБЕРИ УРОВЕНЬ</h2>
+        <button class="menu-btn" style="background: #4cd137;" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄</button>
+        <button class="menu-btn" style="background: #e84118;" onclick="startGame('сложные')">ГОРЫ ДРАКОНА 🌋</button>
+        <button class="menu-btn" style="background: #f39c12;" onclick="startGame('с подвохом')">ТАЙНЫЙ ЗАМОК 🔮</button>
     </div>
 
     <div id="game-screen">
         <div class="header">
-            <div class="stat-card">РЕЙТИНГ<span id="rank">-</span></div>
-            <div class="stat-card">ПОДСКАЗКИ<span id="hints">0</span></div>
+            <div class="stat-card"><div>РЕЙТИНГ</div><span id="rank">-</span></div>
+            <div class="stat-card"><div>ПОДСКАЗКИ</div><span id="hints">0</span></div>
         </div>
         <div class="question-box" id="q-text">Загрузка...</div>
         <div class="boxes" id="box-container"></div>
         <div class="keyboard" id="kb"></div>
-        <div class="actions">
-            <button id="b-hint" class="btn btn-hint" onclick="useHint()">💡 ПОДСКАЗКА</button>
-            <button id="b-check" class="btn btn-check" onclick="check()">ПРОВЕРИТЬ</button>
-            <button id="b-reveal" class="btn btn-reveal" onclick="reveal()">ОТВЕТ</button>
-            <button id="b-next" class="btn btn-next" onclick="loadRiddle()">ДАЛЬШЕ ✨</button>
+        <div class="actions" id="action-btns">
+            <button class="btn" style="background:#a29bfe" onclick="useHint()">💡 ПОДСКАЗКА</button>
+            <button class="btn" style="background:#4cd137" onclick="check()">ПРОВЕРИТЬ</button>
+            <button class="btn" style="background:#ffcc00; color: #555;" onclick="reveal()">ОТВЕТ</button>
         </div>
-        <button style="margin-top:20px; background:none; border:none; color:white; text-decoration:underline;" onclick="location.reload()">↩ В МЕНЮ</button>
+        <button id="b-next" class="btn" onclick="loadRiddle()">ДАЛЬШЕ ✨</button>
+        <a href="#" onclick="location.reload()" style="color:white; text-align:center; margin-top:15px; font-size:12px;">↩ В МЕНЮ</a>
     </div>
 
 <script>
     const tg = window.Telegram.WebApp;
-    tg.expand();
     let curRiddle = null, selIdx = 0, fullAns = "", currentCategory = "";
 
     function startGame(cat) {
@@ -47,15 +104,14 @@
 
     async function loadRiddle() {
         const qBox = document.getElementById('q-text');
-        qBox.classList.remove('question-success', 'question-error');
-        
-        document.getElementById('b-hint').style.display = 'block';
-        document.getElementById('b-check').style.display = 'block';
-        document.getElementById('b-reveal').style.display = 'block';
+        qBox.innerText = "Загрузка...";
+        qBox.classList.remove('question-success');
+        document.getElementById('action-btns').style.display = 'grid';
         document.getElementById('b-next').style.display = 'none';
 
         const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCategory)}`);
-        if(!r.ok) { tg.showAlert("Загадки кончились!"); location.reload(); return; }
+        if(!r.ok) { alert("В этой категории пока нет загадок!"); location.reload(); return; }
+        
         curRiddle = await r.json();
         qBox.innerText = curRiddle.question;
         
@@ -82,8 +138,7 @@
     async function check() {
         let ans = "";
         for(let i=0; i<curRiddle.len; i++) ans += document.getElementById('b-'+i).innerText;
-        const qBox = document.getElementById('q-text');
-
+        
         const res = await fetch('/api/check', {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({user_id: tg.initDataUnsafe.user.id, riddle_id: curRiddle.id, answer: ans})
@@ -91,30 +146,20 @@
         const d = await res.json();
         
         if(d.success) {
-            tg.HapticFeedback.notificationOccurred('success');
-            qBox.classList.add('question-success');
-            document.getElementById('b-check').style.display = 'none';
-            document.getElementById('b-reveal').style.display = 'none';
-            document.getElementById('b-hint').style.display = 'none';
+            document.getElementById('q-text').classList.add('question-success');
+            document.getElementById('action-btns').style.display = 'none';
             document.getElementById('b-next').style.display = 'block';
+            tg.HapticFeedback.notificationOccurred('success');
             updateStats();
         } else {
             tg.HapticFeedback.notificationOccurred('error');
-            qBox.classList.add('question-error');
-            setTimeout(() => qBox.classList.remove('question-error'), 800);
+            alert("Неверно!");
         }
     }
 
     async function useHint() {
-        const hText = document.getElementById('hints').innerText;
-        if(parseInt(hText) <= 0) {
-            tg.showConfirm("Магия кончилась! Добавить +3 подсказки?", async (ok) => {
-                if(ok) {
-                    await fetch('/api/add-hints', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
-                    updateStats();
-                }
-            }); return;
-        }
+        const h = parseInt(document.getElementById('hints').innerText);
+        if(h <= 0) { alert("Подсказки кончились!"); return; }
         document.getElementById('b-'+selIdx).innerText = fullAns[selIdx];
         await fetch('/api/use-hint', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
         updateStats();
@@ -145,21 +190,10 @@
             };
             k.appendChild(d);
         });
-        const del = document.createElement('div');
-        del.className = 'key del'; del.innerText = '⬅️';
-        del.onclick = () => {
-            document.getElementById('b-'+selIdx).innerText = '';
-            if(selIdx > 0) {
-                selIdx--;
-                document.querySelectorAll('.letter').forEach(el=>el.classList.remove('active'));
-                document.getElementById('b-'+selIdx).classList.add('active');
-            }
-        };
-        k.appendChild(del);
     }
 
     function reveal() {
-        tg.showConfirm(`Ответ: ${fullAns}. Идем дальше?`, (ok) => { if(ok) loadRiddle(); });
+        if(confirm("Показать ответ?")) { alert("Ответ: " + fullAns); }
     }
 
     createKb();
