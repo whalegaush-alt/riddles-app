@@ -4,7 +4,8 @@ const { Pool } = require('pg');
 const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
-const app = express(); // Сначала создаем app
+const app = express(); // Переменная 'app' должна быть создана здесь!
+
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
@@ -16,7 +17,7 @@ const ADMIN_ID = process.env.ADMIN_ID;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// --- API ДЛЯ ИГРЫ ---
+// --- ИГРОВОЕ API ---
 
 app.post('/api/user-info', async (req, res) => {
   const { user_id, username } = req.body;
@@ -47,43 +48,54 @@ app.post('/api/check', async (req, res) => {
   const { user_id, riddle_id, answer } = req.body;
   try {
     const r = await pool.query('SELECT answer FROM public.riddles WHERE id = $1', [riddle_id]);
-    if (r.rows[0].answer.toUpperCase() === answer.toUpperCase().trim()) {
+    if (r.rows.length > 0 && r.rows[0].answer.toUpperCase() === answer.toUpperCase().trim()) {
       await pool.query('UPDATE public.users SET score = score + 10 WHERE user_id = $1', [user_id]);
       res.json({ success: true });
     } else res.json({ success: false });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- API АДМИНКИ ---
+// --- АДМИН API ---
 
 app.get('/api/admin/riddles', async (req, res) => {
-  const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
-  res.json(r.rows);
+  try {
+    const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
+    res.json(r.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/riddles', async (req, res) => {
   const { question, answer, category, explanation } = req.body;
-  await pool.query('INSERT INTO public.riddles (question, answer, category, explanation) VALUES ($1, $2, $3, $4)', [question, answer.toUpperCase().trim(), category, explanation]);
-  res.json({ success: true });
+  try {
+    await pool.query('INSERT INTO public.riddles (question, answer, category, explanation) VALUES ($1, $2, $3, $4)', [question, answer.toUpperCase().trim(), category, explanation]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.put('/api/riddles/:id', async (req, res) => {
   const { question, answer, category, explanation } = req.body;
-  await pool.query('UPDATE public.riddles SET question=$1, answer=$2, category=$3, explanation=$4 WHERE id=$5', [question, answer.toUpperCase().trim(), category, explanation, req.params.id]);
-  res.json({ success: true });
+  try {
+    await pool.query('UPDATE public.riddles SET question=$1, answer=$2, category=$3, explanation=$4 WHERE id=$5', [question, answer.toUpperCase().trim(), category, explanation, req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/admin/riddles/:id', async (req, res) => {
-  await pool.query('DELETE FROM public.riddles WHERE id = $1', [req.params.id]);
-  res.json({ success: true });
+  try {
+    await pool.query('DELETE FROM public.riddles WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/use-hint', async (req, res) => {
-  await pool.query('UPDATE public.users SET hints = hints - 1 WHERE user_id = $1 AND hints > 0', [req.body.user_id]);
-  res.json({ success: true });
+  try {
+    await pool.query('UPDATE public.users SET hints = hints - 1 WHERE user_id = $1 AND hints > 0', [req.body.user_id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// БОТ
+// --- ТЕЛЕГРАМ БОТ ---
+
 bot.start((ctx) => {
   ctx.reply(`Викторина готова! ✨`, Markup.inlineKeyboard([
     [Markup.button.webApp('ИГРАТЬ 🏰', process.env.URL)],
@@ -92,5 +104,6 @@ bot.start((ctx) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server started on ${PORT}`));
-bot.launch();
+app.listen(PORT, () => console.log(`🚀 Server started on port ${PORT}`));
+
+bot.launch().catch(err => console.error("Bot launch error:", err));
