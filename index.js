@@ -4,23 +4,20 @@ const { Pool } = require('pg');
 const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
-// 1. Сначала инициализируем Express
-const app = express();
+const app = express(); // Создаем app ПЕРВЫМ
 
-// 2. Настройка базы данных
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
   ssl: { rejectUnauthorized: false }
 });
 
-// 3. Инициализация бота
 const bot = new Telegraf(process.env.BOT_TOKEN);
 const ADMIN_ID = process.env.ADMIN_ID;
 
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// --- API ЭНДПОИНТЫ ---
+// --- ИГРОВАЯ ЛОГИКА ---
 
 app.post('/api/user-info', async (req, res) => {
   const { user_id, username } = req.body;
@@ -35,15 +32,15 @@ app.get('/api/riddle', async (req, res) => {
   const { category } = req.query;
   try {
     const r = await pool.query('SELECT id, question, answer FROM public.riddles WHERE category = $1 ORDER BY RANDOM() LIMIT 1', [category]);
-    if (r.rows.length === 0) return res.status(404).json({ error: "Empty" });
+    if (r.rows.length === 0) return res.status(404).json({ error: "No riddles" });
     res.json({ id: r.rows[0].id, question: r.rows[0].question, len: r.rows[0].answer.length });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.get('/api/reveal', async (req, res) => {
   try {
-    const result = await pool.query('SELECT answer, explanation FROM public.riddles WHERE id = $1', [req.query.id]);
-    res.json(result.rows[0]);
+    const r = await pool.query('SELECT answer, explanation FROM public.riddles WHERE id = $1', [req.query.id]);
+    res.json(r.rows[0]);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -51,14 +48,27 @@ app.post('/api/check', async (req, res) => {
   const { user_id, riddle_id, answer } = req.body;
   try {
     const r = await pool.query('SELECT answer FROM public.riddles WHERE id = $1', [riddle_id]);
-    if (r.rows.length > 0 && r.rows[0].answer.toUpperCase() === answer.toUpperCase().trim()) {
+    if (r.rows[0].answer.toUpperCase() === answer.toUpperCase().trim()) {
       await pool.query('UPDATE public.users SET score = score + 10 WHERE user_id = $1', [user_id]);
       res.json({ success: true });
     } else res.json({ success: false });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// --- АДМИН-ФУНКЦИИ ---
+// Начисление подсказок за рекламу
+app.post('/api/add-hints-ad', async (req, res) => {
+  try {
+    await pool.query('UPDATE public.users SET hints = hints + 3 WHERE user_id = $1', [req.body.user_id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/use-hint', async (req, res) => {
+  await pool.query('UPDATE public.users SET hints = hints - 1 WHERE user_id = $1 AND hints > 0', [req.body.user_id]);
+  res.json({ success: true });
+});
+
+// --- АДМИН-ЛОГИКА ---
 
 app.get('/api/admin/riddles', async (req, res) => {
   const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
@@ -82,29 +92,13 @@ app.delete('/api/admin/riddles/:id', async (req, res) => {
   res.json({ success: true });
 });
 
-app.post('/api/use-hint', async (req, res) => {
-  await pool.query('UPDATE public.users SET hints = hints - 1 WHERE user_id = $1 AND hints > 0', [req.body.user_id]);
-  res.json({ success: true });
-});
-
-// --- ЛОГИКА БОТА ---
-
 bot.start((ctx) => {
-  ctx.reply(`Загадки ждут тебя! ✨`, Markup.inlineKeyboard([
+  ctx.reply(`Загадки ждут! ✨`, Markup.inlineKeyboard([
     [Markup.button.webApp('ИГРАТЬ 🏰', process.env.URL)],
     ...(ctx.from.id.toString() === ADMIN_ID ? [[Markup.button.url('АДМИНКА ⚙️', `${process.env.URL}/admin.html`)]] : [])
   ]));
 });
 
-// Запуск сервера
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`✅ Сервер запущен на порту ${PORT}`));
-
-// Запуск бота с обработкой ошибок
-bot.launch({
-    dropPendingUpdates: true // Это поможет избежать конфликтов при перезагрузке
-}).then(() => console.log('🤖 Бот успешно запущен'))
-  .catch(err => console.error('❌ Ошибка запуска бота:', err));
-
-process.once('SIGINT', () => bot.stop('SIGINT'));
-process.once('SIGTERM', () => bot.stop('SIGTERM'));
+app.listen(PORT, () => console.log(`✅ Server started on ${PORT}`));
+bot.launch({ dropPendingUpdates: true });
