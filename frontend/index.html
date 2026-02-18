@@ -18,30 +18,29 @@
             font-weight: bold; font-size: 17px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1);
         }
         #game-screen { display: none; width: 100%; max-width: 400px; flex-direction: column; }
-        .header { display: flex; justify-content: space-between; background: white; padding: 12px 20px; border-radius: 20px; margin-bottom: 15px; }
+        .header { display: flex; justify-content: space-between; background: white; padding: 12px 20px; border-radius: 20px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
         .stat-card { text-align: center; }
         .stat-card div { font-size: 10px; color: #888; font-weight: bold; }
         .stat-card span { font-size: 18px; font-weight: 900; color: var(--main-blue); }
         .question-box { 
             background: white; padding: 20px; border-radius: 20px; text-align: center; font-size: 18px; 
             font-weight: bold; min-height: 70px; display: flex; align-items: center; justify-content: center;
-            border: 3px solid var(--main-blue); margin-bottom: 15px;
+            border: 3px solid var(--main-blue); margin-bottom: 15px; width: 100%; box-sizing: border-box;
         }
         .boxes { display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
         .letter { 
-            width: 34px; height: 44px; background: white; border-radius: 8px; display: flex; 
-            align-items: center; justify-content: center; font-size: 20px; font-weight: 900; box-shadow: 0 3px 0 #ccc;
+            width: 32px; height: 42px; background: white; border-radius: 8px; display: flex; 
+            align-items: center; justify-content: center; font-size: 18px; font-weight: 900; box-shadow: 0 3px 0 #ccc;
         }
         .letter.active { border: 2px solid #ffcc00; box-shadow: 0 3px 0 #ffcc00; }
-        .keyboard { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: rgba(255,255,255,0.2); padding: 8px; border-radius: 12px; }
+        .keyboard { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: rgba(255,255,255,0.2); padding: 8px; border-radius: 12px; width: 100%; box-sizing: border-box; }
         .key { 
-            background: white; height: 40px; border-radius: 6px; font-weight: bold; display: flex; 
-            align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 2px 0 #999; cursor: pointer;
+            background: white; height: 38px; border-radius: 6px; font-weight: bold; display: flex; 
+            align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 2px 0 #999; cursor: pointer;
         }
         .key.del { grid-column: span 2; background: #ff7675; color: white; }
-        .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; }
-        .btn { border: none; border-radius: 12px; padding: 12px 5px; color: white; font-weight: bold; font-size: 12px; cursor: pointer; }
-        #b-next { display: none; grid-column: span 3; background: var(--main-blue); font-size: 16px; margin-top: 10px; }
+        .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-top: 15px; width: 100%; }
+        .btn { border: none; border-radius: 12px; padding: 12px 5px; color: white; font-weight: bold; font-size: 11px; cursor: pointer; }
     </style>
 </head>
 <body>
@@ -62,11 +61,11 @@
         <div class="boxes" id="box-container"></div>
         <div class="keyboard" id="kb"></div>
         <div class="actions" id="action-btns">
-            <button class="btn" style="background:#a29bfe" onclick="useHint()">💡 ПОДСКАЗКА</button>
+            <button class="btn" style="background:#a29bfe" onclick="useHint()">ПОДСКАЗКА</button>
             <button class="btn" style="background:#4cd137" onclick="check()">ПРОВЕРИТЬ</button>
             <button class="btn" style="background:#ffcc00; color: #555;" onclick="reveal()">ОТВЕТ</button>
         </div>
-        <button id="b-next" class="btn" onclick="loadRiddle()">ДАЛЬШЕ ✨</button>
+        <button id="b-next" class="btn" style="display:none; width: 100%; background: var(--main-blue); padding: 15px; font-size: 16px; margin-top: 10px;" onclick="loadRiddle()">ДАЛЬШЕ ✨</button>
         <div onclick="location.reload()" style="color:white; text-align:center; margin-top:15px; font-size:12px; cursor:pointer;">↩ В МЕНЮ</div>
     </div>
 
@@ -74,8 +73,8 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
     
-    // ВСТАВЬ СВОЙ ID ИЗ ADSGRAM НИЖЕ
-    const AdController = window.Adsgram.init({ blockId: "ТВОЙ_BLOCK_ID" });
+    // Инициализация рекламы с твоим ID блока
+    const AdController = window.Adsgram.init({ blockId: "23236" });
 
     let curRiddle = null, selIdx = 0, fullAns = "", currentExplanation = "", currentCategory = "";
 
@@ -127,18 +126,18 @@
                     method: 'POST', headers: {'Content-Type': 'application/json'},
                     body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id })
                 });
-                tg.showAlert("Вы получили 3 подсказки! ✨");
+                tg.showAlert("Вы получили +3 подсказки! 🎁");
                 updateStats();
             }
         } catch (e) {
-            tg.showAlert("Реклама не загрузилась, попробуйте позже.");
+            tg.showAlert("Реклама не готова, попробуйте чуть позже.");
         }
     }
 
     async function useHint() {
         const h = parseInt(document.getElementById('hints').innerText);
         if (h <= 0) {
-            tg.showConfirm("Подсказки кончились! Посмотреть рекламу и получить +3?", (ok) => {
+            tg.showConfirm("Подсказки кончились! Посмотреть рекламу за +3 подсказки?", (ok) => {
                 if(ok) showAdForHints();
             });
             return;
@@ -149,17 +148,19 @@
     }
 
     async function reveal() {
-        tg.showConfirm("Посмотреть рекламу, чтобы узнать ответ?", async (ok) => {
+        tg.showConfirm("Посмотреть рекламу, чтобы узнать правильный ответ?", async (ok) => {
             if (!ok) return;
             try {
                 const result = await AdController.show();
                 if (result.done) {
-                    let msg = `Ответ: ${fullAns}`;
-                    if(currentExplanation) msg += `\n\n💡 ${currentExplanation}`;
-                    tg.showPopup({ title: 'Секрет раскрыт', message: msg, buttons: [{type: 'ok', text: 'Понятно'}] });
+                    tg.showPopup({ 
+                        title: 'Ответ', 
+                        message: `${fullAns}\n\n💡 ${currentExplanation}`, 
+                        buttons: [{type: 'ok', text: 'Понятно'}] 
+                    });
                 }
             } catch (e) {
-                tg.showAlert("Реклама не готова, попробуйте позже.");
+                tg.showAlert("Реклама не загрузилась, попробуйте позже.");
             }
         });
     }
@@ -177,7 +178,6 @@
             document.getElementById('q-text').style.color = "white";
             document.getElementById('action-btns').style.display = 'none';
             document.getElementById('b-next').style.display = 'block';
-            tg.HapticFeedback.notificationOccurred('success');
             if(currentExplanation) tg.showPopup({ title: 'Верно!', message: currentExplanation });
             updateStats();
         } else {
