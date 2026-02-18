@@ -4,7 +4,7 @@ const { Pool } = require('pg');
 const { Telegraf, Markup } = require('telegraf');
 require('dotenv').config();
 
-const app = express(); // Создаем app ПЕРВЫМ
+const app = express(); // Исправлено: инициализация app теперь в самом начале
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -55,7 +55,7 @@ app.post('/api/check', async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// Начисление подсказок за рекламу
+// Начисление 3 подсказок за рекламу
 app.post('/api/add-hints-ad', async (req, res) => {
   try {
     await pool.query('UPDATE public.users SET hints = hints + 3 WHERE user_id = $1', [req.body.user_id]);
@@ -68,7 +68,7 @@ app.post('/api/use-hint', async (req, res) => {
   res.json({ success: true });
 });
 
-// --- АДМИН-ЛОГИКА ---
+// --- АДМИНКА ---
 
 app.get('/api/admin/riddles', async (req, res) => {
   const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
@@ -81,19 +81,13 @@ app.post('/api/riddles', async (req, res) => {
   res.json({ success: true });
 });
 
-app.put('/api/riddles/:id', async (req, res) => {
-  const { question, answer, category, explanation } = req.body;
-  await pool.query('UPDATE public.riddles SET question=$1, answer=$2, category=$3, explanation=$4 WHERE id=$5', [question, answer.toUpperCase().trim(), category, explanation, req.params.id]);
-  res.json({ success: true });
-});
-
 app.delete('/api/admin/riddles/:id', async (req, res) => {
   await pool.query('DELETE FROM public.riddles WHERE id = $1', [req.params.id]);
   res.json({ success: true });
 });
 
 bot.start((ctx) => {
-  ctx.reply(`Загадки ждут! ✨`, Markup.inlineKeyboard([
+  ctx.reply(`Загадки Смайлика готовы! ✨`, Markup.inlineKeyboard([
     [Markup.button.webApp('ИГРАТЬ 🏰', process.env.URL)],
     ...(ctx.from.id.toString() === ADMIN_ID ? [[Markup.button.url('АДМИНКА ⚙️', `${process.env.URL}/admin.html`)]] : [])
   ]));
