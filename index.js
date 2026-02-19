@@ -17,8 +17,7 @@ const ADMIN_ID = process.env.ADMIN_ID;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'frontend')));
 
-// --- API ---
-
+// API ДЛЯ ИГРЫ
 app.post('/api/user-info', async (req, res) => {
   const { user_id, username } = req.body;
   try {
@@ -30,7 +29,6 @@ app.post('/api/user-info', async (req, res) => {
 
 app.get('/api/riddle', async (req, res) => {
   const { category } = req.query;
-  console.log(`Запрос загадки для категории: ${category}`); // Лог для проверки
   try {
     const r = await pool.query('SELECT id, question, answer FROM public.riddles WHERE category = $1 ORDER BY RANDOM() LIMIT 1', [category]);
     if (r.rows.length === 0) return res.status(404).json({ error: "Empty" });
@@ -68,21 +66,27 @@ app.post('/api/use-hint', async (req, res) => {
   res.json({ success: true });
 });
 
-// Админка
+// API ДЛЯ АДМИНКИ
 app.get('/api/admin/riddles', async (req, res) => {
-  const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
-  res.json(r.rows);
+  try {
+    const r = await pool.query('SELECT * FROM public.riddles ORDER BY id DESC');
+    res.json(r.rows);
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/riddles', async (req, res) => {
   const { question, answer, category, explanation } = req.body;
-  await pool.query('INSERT INTO public.riddles (question, answer, category, explanation) VALUES ($1, $2, $3, $4)', [question, answer.toUpperCase().trim(), category, explanation]);
-  res.json({ success: true });
+  try {
+    await pool.query('INSERT INTO public.riddles (question, answer, category, explanation) VALUES ($1, $2, $3, $4)', [question, answer.toUpperCase().trim(), category, explanation]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.delete('/api/admin/riddles/:id', async (req, res) => {
-  await pool.query('DELETE FROM public.riddles WHERE id = $1', [req.params.id]);
-  res.json({ success: true });
+  try {
+    await pool.query('DELETE FROM public.riddles WHERE id = $1', [req.params.id]);
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 bot.start((ctx) => {
@@ -93,5 +97,7 @@ bot.start((ctx) => {
 });
 
 const PORT = process.env.PORT || 8080;
-app.listen(PORT, () => console.log(`Server started on ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Server running on ${PORT}`));
+
+// dropPendingUpdates: true — КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ОШИБКИ 409 CONFLICT
 bot.launch({ dropPendingUpdates: true });
