@@ -2,76 +2,92 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Админка - Загадки Смайлика</title>
+    <title>Админка - Загадки</title>
     <style>
-        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
-        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
-        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; border: 1px solid #ddd; border-radius: 5px; }
-        button { background: #248bcf; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; cursor: pointer; font-weight: bold; }
-        .item { background: #fff; padding: 10px; margin-top: 10px; border-bottom: 1px solid #eee; display: flex; justify-content: space-between; align-items: center; }
-        .del-btn { background: #ff7675; width: auto; padding: 5px 10px; font-size: 12px; }
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; color: #333; }
+        .card { background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); max-width: 500px; margin: auto; }
+        h2 { margin-top: 0; color: #248bcf; text-align: center; }
+        label { display: block; margin-top: 10px; font-weight: bold; font-size: 14px; }
+        input, select { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; }
+        button { background: #248bcf; color: white; border: none; padding: 15px; width: 100%; border-radius: 8px; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.3s; }
+        button:hover { background: #1a6da3; }
+        .list-container { margin-top: 30px; border-top: 2px solid #eee; pt: 20px; }
+        .riddle-item { background: #f9f9f9; padding: 10px; border-radius: 5px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 4px solid #248bcf; }
+        .del-btn { background: #ff7675; width: auto; padding: 5px 10px; margin-top: 0; font-size: 12px; }
     </style>
 </head>
 <body>
+
     <div class="card">
-        <h2>Добавить новую загадку</h2>
-        <input type="text" id="q" placeholder="Вопрос (текст или эмодзи)">
-        <input type="text" id="a" placeholder="Ответ (одним словом)">
+        <h2>Добавить Загадку</h2>
+        
+        <label>Категория:</label>
         <select id="cat">
             <option value="лёгкие">Лёгкие (Грибной лес)</option>
             <option value="сложные">Сложные (Горы дракона)</option>
             <option value="с подвохом">С подвохом (Тайный замок)</option>
         </select>
-        <textarea id="exp" placeholder="Объяснение (необязательно)"></textarea>
-        <button onclick="add()">СОХРАНИТЬ В БАЗУ</button>
 
-        <div id="list" style="margin-top: 30px;">
-            <h3>Загадки в базе:</h3>
+        <label>Текст загадки:</label>
+        <input type="text" id="q" placeholder="Например: Сидит дед, во сто шуб одет...">
+
+        <label>Ответ (одним словом):</label>
+        <input type="text" id="a" placeholder="ЛУК">
+
+        <button onclick="addRiddle()">СОХРАНИТЬ В БАЗУ</button>
+
+        <div class="list-container" id="list">
+            <h3>Список в базе:</h3>
             </div>
     </div>
 
     <script>
-        async function load() {
+        // Загрузка списка всех загадок
+        async function loadRiddles() {
             try {
                 const r = await fetch('/api/admin/riddles');
                 const data = await r.json();
                 const cont = document.getElementById('list');
-                cont.innerHTML = '<h3>Загадки в базе:</h3>';
+                cont.innerHTML = '<h3>Список в базе:</h3>';
                 data.forEach(item => {
                     cont.innerHTML += `
-                        <div class="item">
-                            <span><b>[${item.category}]</b> ${item.question.substring(0,20)}...</span>
-                            <button class="del-btn" onclick="del(${item.id})">Удалить</button>
+                        <div class="riddle-item">
+                            <span><b>[${item.category}]</b> ${item.question.substring(0,15)}...</span>
+                            <button class="del-btn" onclick="deleteRiddle(${item.id})">Удалить</button>
                         </div>`;
                 });
-            } catch(e) { console.error("Ошибка загрузки", e); }
+            } catch(e) { console.error("Ошибка загрузки:", e); }
         }
 
-        async function add() {
-            const body = {
-                question: document.getElementById('q').value,
-                answer: document.getElementById('a').value,
-                category: document.getElementById('cat').value,
-                explanation: document.getElementById('exp').value
-            };
-            if(!body.question || !body.answer) return alert("Заполни вопрос и ответ!");
-            
+        // Добавление новой загадки
+        async function addRiddle() {
+            const q = document.getElementById('q').value;
+            const a = document.getElementById('a').value;
+            const cat = document.getElementById('cat').value;
+
+            if(!q || !a) return alert("Заполни все поля!");
+
             await fetch('/api/riddles', {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(body)
+                body: JSON.stringify({ question: q, answer: a, category: cat })
             });
-            alert("Успешно добавлено!");
-            location.reload();
+
+            alert("Сохранено!");
+            document.getElementById('q').value = '';
+            document.getElementById('a').value = '';
+            loadRiddles();
         }
 
-        async function del(id) {
-            if(confirm('Удалить эту загадку?')) {
+        // Удаление загадки
+        async function deleteRiddle(id) {
+            if(confirm('Точно удалить?')) {
                 await fetch('/api/admin/riddles/' + id, { method: 'DELETE' });
-                load();
+                loadRiddles();
             }
         }
-        load();
+
+        loadRiddles();
     </script>
 </body>
 </html>
