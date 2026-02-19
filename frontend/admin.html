@@ -2,130 +2,69 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Админ-панель Викторины</title>
+    <title>Админка - Загадки Смайлика</title>
     <style>
-        body { font-family: sans-serif; background: #f4f7f6; padding: 20px; display: flex; flex-direction: column; align-items: center; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); width: 100%; max-width: 600px; margin-bottom: 30px; }
-        select, textarea, input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 10px; border: 1px solid #ddd; box-sizing: border-box; font-size: 16px; }
-        .btn-save { background: #248bcf; color: white; border: none; padding: 15px; border-radius: 10px; cursor: pointer; width: 100%; font-weight: bold; }
-        .btn-cancel { background: #999; margin-top: 5px; }
-        
-        table { width: 100%; max-width: 900px; border-collapse: collapse; background: white; border-radius: 15px; overflow: hidden; }
-        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #eee; }
-        th { background: #248bcf; color: white; }
-        .actions { display: flex; gap: 8px; }
-        .btn-edit { background: #f39c12; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
-        .btn-del { background: #e84118; color: white; border: none; padding: 8px; border-radius: 5px; cursor: pointer; }
+        body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
+        .card { background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); max-width: 600px; margin: auto; }
+        input, textarea, select { width: 100%; padding: 10px; margin: 10px 0; box-sizing: border-box; }
+        button { background: #248bcf; color: white; border: none; padding: 15px; width: 100%; border-radius: 5px; cursor: pointer; }
+        .list { margin-top: 30px; }
+        .item { background: white; padding: 10px; margin-bottom: 5px; border-radius: 5px; display: flex; justify-content: space-between; }
     </style>
 </head>
 <body>
-
     <div class="card">
-        <h2 id="form-title">Добавить загадку 🔮</h2>
-        <input type="hidden" id="edit-id">
-        <select id="category">
-            <option value="лёгкие">🍄 Лёгкие</option>
-            <option value="сложные">🌋 Сложные</option>
-            <option value="с подвохом">🔮 С подвохом</option>
+        <h2>Добавить загадку</h2>
+        <input type="text" id="q" placeholder="Вопрос (текст или эмодзи)">
+        <input type="text" id="a" placeholder="Ответ (одним словом)">
+        <select id="cat">
+            <option value="Грибной лес">Грибной лес</option>
+            <option value="Горы дракона">Горы дракона</option>
+            <option value="Тайный замок">Тайный замок</option>
         </select>
-        <textarea id="question" rows="3" placeholder="Текст загадки..."></textarea>
-        <input type="text" id="answer" placeholder="ОТВЕТ">
-        <textarea id="explanation" rows="2" placeholder="Пояснение (необязательно)..."></textarea>
-        
-        <button id="btn-save" class="btn-save" onclick="saveRiddle()">СОХРАНИТЬ</button>
-        <button id="btn-cancel" class="btn-save btn-cancel" style="display:none" onclick="cancelEdit()">ОТМЕНА</button>
+        <textarea id="exp" placeholder="Объяснение (необязательно)"></textarea>
+        <button onclick="add()">СОХРАНИТЬ</button>
+
+        <div class="list" id="list"></div>
     </div>
 
-    <table>
-        <thead>
-            <tr>
-                <th>Кат.</th>
-                <th>Загадка</th>
-                <th>Ответ</th>
-                <th>Действия</th>
-            </tr>
-        </thead>
-        <tbody id="riddles-list"></tbody>
-    </table>
-
     <script>
-        let allRiddles = [];
-
-        window.onload = loadRiddles;
-
-        async function loadRiddles() {
-            const res = await fetch('/api/admin/riddles');
-            allRiddles = await res.json();
-            const list = document.getElementById('riddles-list');
-            list.innerHTML = '';
-
-            allRiddles.forEach(r => {
-                list.innerHTML += `
-                    <tr>
-                        <td><b>${r.category}</b></td>
-                        <td>${r.question.substring(0, 40)}...</td>
-                        <td>${r.answer}</td>
-                        <td class="actions">
-                            <button class="btn-edit" onclick="editRiddle(${r.id})">✎</button>
-                            <button class="btn-del" onclick="deleteRiddle(${r.id})">✖</button>
-                        </td>
-                    </tr>
-                `;
+        async function load() {
+            const r = await fetch('/api/admin/riddles');
+            const data = await r.json();
+            const cont = document.getElementById('list');
+            cont.innerHTML = '<h3>Список загадок:</h3>';
+            data.forEach(item => {
+                cont.innerHTML += `
+                    <div class="item">
+                        <span>[${item.category}] ${item.question} - <b>${item.answer}</b></span>
+                        <button style="width:auto; padding:5px; background:red;" onclick="del(${item.id})">Удалить</button>
+                    </div>`;
             });
         }
 
-        async function saveRiddle() {
-            const id = document.getElementById('edit-id').value;
+        async function add() {
             const body = {
-                question: document.getElementById('question').value,
-                answer: document.getElementById('answer').value,
-                category: document.getElementById('category').value,
-                explanation: document.getElementById('explanation').value
+                question: document.getElementById('q').value,
+                answer: document.getElementById('a').value,
+                category: document.getElementById('cat').value,
+                explanation: document.getElementById('exp').value
             };
-
-            const url = id ? `/api/riddles/${id}` : '/api/riddles';
-            const method = id ? 'PUT' : 'POST';
-
-            await fetch(url, {
-                method: method,
-                headers: { 'Content-Type': 'application/json' },
+            await fetch('/api/riddles', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(body)
             });
-
-            cancelEdit();
-            loadRiddles();
+            location.reload();
         }
 
-        function editRiddle(id) {
-            const r = allRiddles.find(i => i.id === id);
-            document.getElementById('edit-id').value = r.id;
-            document.getElementById('question').value = r.question;
-            document.getElementById('answer').value = r.answer;
-            document.getElementById('category').value = r.category;
-            document.getElementById('explanation').value = r.explanation || "";
-            
-            document.getElementById('form-title').innerText = "Изменить загадку 📝";
-            document.getElementById('btn-save').innerText = "ОБНОВИТЬ";
-            document.getElementById('btn-cancel').style.display = 'block';
-            window.scrollTo(0,0);
-        }
-
-        function cancelEdit() {
-            document.getElementById('edit-id').value = '';
-            document.getElementById('question').value = '';
-            document.getElementById('answer').value = '';
-            document.getElementById('explanation').value = '';
-            document.getElementById('form-title').innerText = "Добавить загадку 🔮";
-            document.getElementById('btn-save').innerText = "СОХРАНИТЬ";
-            document.getElementById('btn-cancel').style.display = 'none';
-        }
-
-        async function deleteRiddle(id) {
-            if(confirm("Удалить?")) {
-                await fetch(`/api/admin/riddles/${id}`, { method: 'DELETE' });
-                loadRiddles();
+        async function del(id) {
+            if(confirm('Удалить?')) {
+                await fetch('/api/admin/riddles/' + id, {method: 'DELETE'});
+                load();
             }
         }
+        load();
     </script>
 </body>
 </html>
