@@ -8,45 +8,27 @@
     <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
         :root { --main-blue: #248bcf; --win-green: #4cd137; --bg-color: #74b9ff; }
-        body { 
-            font-family: 'Segoe UI', sans-serif; background: var(--bg-color); margin: 0; padding: 15px;
-            display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box;
-        }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; box-sizing: border-box; }
         #menu-screen { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 350px; margin-top: 50px; }
-        .menu-btn { 
-            width: 100%; padding: 20px; border-radius: 15px; border: none; color: white; 
-            font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2);
-            text-transform: uppercase;
-        }
+        .menu-btn { width: 100%; padding: 20px; border-radius: 15px; border: none; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); text-transform: uppercase; }
         #game-screen { display: none; width: 100%; max-width: 400px; flex-direction: column; }
-        .header { display: flex; justify-content: space-between; background: white; padding: 15px; border-radius: 20px; margin-bottom: 15px; }
+        .header { display: flex; justify-content: space-between; background: white; padding: 15px; border-radius: 20px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
         .stat-card div { font-size: 10px; color: #888; font-weight: bold; text-align: center; }
         .stat-card span { font-size: 20px; font-weight: 900; color: var(--main-blue); display: block; text-align: center; }
-        .question-box { 
-            background: white; padding: 25px; border-radius: 20px; text-align: center; font-size: 18px; 
-            font-weight: bold; min-height: 80px; display: flex; align-items: center; justify-content: center;
-            border: 3px solid var(--main-blue); margin-bottom: 20px;
-        }
+        .question-box { background: white; padding: 25px; border-radius: 20px; text-align: center; font-size: 18px; font-weight: bold; min-height: 80px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--main-blue); margin-bottom: 20px; width: 100%; box-sizing: border-box; }
         .boxes { display: flex; justify-content: center; gap: 6px; margin-bottom: 20px; flex-wrap: wrap; }
-        .letter { 
-            width: 36px; height: 46px; background: white; border-radius: 10px; display: flex; 
-            align-items: center; justify-content: center; font-size: 20px; font-weight: 900; box-shadow: 0 4px 0 #ccc;
-        }
-        .letter.active { border: 2px solid #ffcc00; box-shadow: 0 4px 0 #ffcc00; }
-        .keyboard { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; margin-bottom: 20px; }
-        .key { 
-            background: white; height: 42px; border-radius: 8px; font-weight: bold; display: flex; 
-            align-items: center; justify-content: center; font-size: 14px; box-shadow: 0 3px 0 #999; cursor: pointer;
-        }
+        .letter { width: 34px; height: 44px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; box-shadow: 0 3px 0 #ccc; }
+        .letter.active { border: 2px solid #ffcc00; box-shadow: 0 3px 0 #ffcc00; }
+        .keyboard { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; width: 100%; box-sizing: border-box; margin-bottom: 15px; }
+        .key { background: white; height: 38px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 13px; box-shadow: 0 2px 0 #999; cursor: pointer; }
         .key.del { grid-column: span 2; background: #ff7675; color: white; }
-        .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; }
-        .btn { border: none; border-radius: 12px; padding: 15px 5px; color: white; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .actions { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; width: 100%; }
+        .btn { border: none; border-radius: 12px; padding: 12px 5px; color: white; font-weight: bold; font-size: 11px; cursor: pointer; }
     </style>
 </head>
 <body>
-
     <div id="menu-screen">
-        <h1 style="color: white; text-align: center; text-shadow: 2px 2px 4px rgba(0,0,0,0.2);">ВЫБЕРИ УРОВЕНЬ</h1>
+        <h1 style="color: white; text-align: center;">ЗАГАДКИ СМАЙЛИКА</h1>
         <button class="menu-btn" style="background: #4cd137;" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄</button>
         <button class="menu-btn" style="background: #e84118;" onclick="startGame('сложные')">ГОРЫ ДРАКОНА 🌋</button>
         <button class="menu-btn" style="background: #f39c12;" onclick="startGame('с подвохом')">ТАЙНЫЙ ЗАМОК 🔮</button>
@@ -60,7 +42,7 @@
         <div class="question-box" id="q-text">Загрузка...</div>
         <div class="boxes" id="box-container"></div>
         <div id="kb-container" class="keyboard"></div>
-        <div class="actions" id="action-btns">
+        <div class="actions">
             <button class="btn" style="background:#a29bfe" onclick="useHint()">💡 ПОДСКАЗКА</button>
             <button class="btn" style="background:#4cd137" onclick="check()">ПРОВЕРИТЬ</button>
             <button class="btn" style="background:#ffcc00; color: #555;" onclick="reveal()">ОТВЕТ</button>
@@ -72,8 +54,6 @@
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    
-    // ТВОЙ ID РЕКЛАМЫ ИЗ ADSGRAM
     const AdController = window.Adsgram.init({ blockId: "23236" });
 
     let curRiddle = null, selIdx = 0, fullAns = "", currentExplanation = "", currentCategory = "";
@@ -85,23 +65,27 @@
         loadRiddle();
     }
 
-    async function loadRiddle() {
-        const qBox = document.getElementById('q-text');
-        qBox.style.background = "white"; qBox.style.color = "black";
-        document.getElementById('action-btns').style.display = 'grid';
-        document.getElementById('b-next').style.display = 'none';
+    async function updateStats() {
+        const r = await fetch('/api/user-info', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, username: tg.initDataUnsafe.user.first_name })
+        });
+        const d = await r.json();
+        document.getElementById('rank').innerText = d.rank;
+        document.getElementById('hints').innerText = d.hints;
+    }
 
+    async function loadRiddle() {
+        document.getElementById('q-text').style.background = "white";
+        document.getElementById('b-next').style.display = 'none';
         const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCategory)}`);
-        if(!r.ok) { tg.showAlert("Загадки кончились!"); location.reload(); return; }
-        
+        if(!r.ok) { tg.showAlert("Загадки этой категории закончились!"); location.reload(); return; }
         curRiddle = await r.json();
-        qBox.innerText = curRiddle.question;
-        
+        document.getElementById('q-text').innerText = curRiddle.question;
         const ra = await fetch('/api/reveal?id='+curRiddle.id);
         const data = await ra.json();
         fullAns = data.answer.toUpperCase();
         currentExplanation = data.explanation || "";
-        
         const cont = document.getElementById('box-container');
         cont.innerHTML = '';
         for(let i=0; i<curRiddle.len; i++) {
@@ -118,28 +102,10 @@
         updateStats();
     }
 
-    async function showAdForHints() {
-        try {
-            const result = await AdController.show();
-            if (result.done) {
-                await fetch('/api/add-hints-ad', {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id })
-                });
-                tg.showAlert("Зачислено +3 подсказки! ✨");
-                updateStats();
-            }
-        } catch (e) {
-            tg.showAlert("Реклама не готова, попробуйте позже.");
-        }
-    }
-
     async function useHint() {
         const h = parseInt(document.getElementById('hints').innerText);
         if (h <= 0) {
-            tg.showConfirm("Подсказки закончились! Посмотреть рекламу?", (ok) => {
-                if(ok) showAdForHints();
-            });
+            tg.showConfirm("Подсказки кончились! Посмотреть рекламу за +3?", (ok) => { if(ok) showAd(); });
             return;
         }
         document.getElementById('b-'+selIdx).innerText = fullAns[selIdx];
@@ -147,51 +113,37 @@
         updateStats();
     }
 
+    async function showAd() {
+        try {
+            const res = await AdController.show();
+            if(res.done) {
+                await fetch('/api/add-hints-ad', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id }) });
+                updateStats();
+                tg.showAlert("Добавлено +3 подсказки!");
+            }
+        } catch(e) { tg.showAlert("Реклама не готова."); }
+    }
+
     async function reveal() {
         tg.showConfirm("Посмотреть рекламу, чтобы узнать ответ?", async (ok) => {
-            if (!ok) return;
+            if(!ok) return;
             try {
-                const result = await AdController.show();
-                if (result.done) {
-                    tg.showPopup({ 
-                        title: 'Правильный ответ', 
-                        message: `${fullAns}\n\n💡 ${currentExplanation}`, 
-                        buttons: [{type: 'ok'}] 
-                    });
-                }
-            } catch (e) {
-                tg.showAlert("Попробуйте позже.");
-            }
+                const res = await AdController.show();
+                if(res.done) tg.showPopup({ title: 'Ответ', message: `${fullAns}\n\n${currentExplanation}` });
+            } catch(e) { tg.showAlert("Реклама не готова."); }
         });
     }
 
     async function check() {
         let ans = "";
         for(let i=0; i<curRiddle.len; i++) ans += document.getElementById('b-'+i).innerText;
-        const res = await fetch('/api/check', {
-            method:'POST', headers:{'Content-Type':'application/json'},
-            body: JSON.stringify({user_id: tg.initDataUnsafe.user.id, riddle_id: curRiddle.id, answer: ans})
-        });
+        const res = await fetch('/api/check', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: tg.initDataUnsafe.user.id, riddle_id: curRiddle.id, answer: ans}) });
         const d = await res.json();
         if(d.success) {
-            document.getElementById('q-text').style.background = "var(--win-green)";
-            document.getElementById('q-text').style.color = "white";
-            document.getElementById('action-btns').style.display = 'none';
+            document.getElementById('q-text').style.background = "#4cd137";
             document.getElementById('b-next').style.display = 'block';
             updateStats();
-        } else {
-            tg.showAlert("Неверно! Попробуй еще раз.");
-        }
-    }
-
-    async function updateStats() {
-        const r = await fetch('/api/user-info', {
-            method: 'POST', headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, username: tg.initDataUnsafe.user.first_name })
-        });
-        const d = await r.json();
-        document.getElementById('rank').innerText = d.rank;
-        document.getElementById('hints').innerText = d.hints;
+        } else tg.showAlert("Неверно!");
     }
 
     function createKb() {
