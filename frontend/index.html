@@ -2,47 +2,170 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Riddles</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Загадки Смайлика</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
     <style>
-        body { font-family: sans-serif; background: #74b9ff; text-align: center; color: white; }
-        .menu-btn { width: 80%; padding: 20px; margin: 10px; border-radius: 15px; border: none; font-weight: bold; font-size: 18px; color: white; }
-        #game-screen { display: none; padding: 20px; }
-        .box { background: white; color: black; padding: 20px; border-radius: 15px; margin-bottom: 20px; }
+        :root { --main-blue: #248bcf; --bg-color: #74b9ff; }
+        body { font-family: 'Segoe UI', sans-serif; background: var(--bg-color); margin: 0; padding: 15px; display: flex; flex-direction: column; align-items: center; min-height: 100vh; color: white; }
+        #menu-screen { display: flex; flex-direction: column; gap: 15px; width: 100%; max-width: 350px; margin-top: 50px; }
+        .menu-btn { width: 100%; padding: 20px; border-radius: 15px; border: none; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.2); text-transform: uppercase; }
+        #game-screen { display: none; width: 100%; max-width: 400px; flex-direction: column; }
+        .header { display: flex; justify-content: space-between; background: white; padding: 12px; border-radius: 15px; margin-bottom: 15px; width: 100%; box-sizing: border-box; }
+        .stat-card span { font-size: 18px; font-weight: 900; color: var(--main-blue); display: block; text-align: center; }
+        .question-box { background: white; padding: 20px; border-radius: 20px; text-align: center; font-size: 18px; font-weight: bold; min-height: 80px; display: flex; align-items: center; justify-content: center; border: 3px solid var(--main-blue); margin-bottom: 15px; color: #333; width: 100%; }
+        .boxes { display: flex; justify-content: center; gap: 5px; margin-bottom: 15px; flex-wrap: wrap; }
+        .letter { width: 32px; height: 42px; background: white; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; font-weight: 900; color: #333; box-shadow: 0 3px 0 #ccc; }
+        .letter.active { border: 2px solid #ffcc00; box-shadow: 0 3px 0 #ffcc00; }
+        .keyboard { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; width: 100%; margin-bottom: 15px; }
+        .key { background: white; height: 38px; border-radius: 6px; font-weight: bold; display: flex; align-items: center; justify-content: center; font-size: 13px; color: #333; box-shadow: 0 2px 0 #999; cursor: pointer; }
+        .key.del { grid-column: span 2; background: #ff7675; color: white; }
+        .btn { border: none; border-radius: 12px; padding: 12px 5px; color: white; font-weight: bold; font-size: 11px; cursor: pointer; }
     </style>
 </head>
 <body>
     <div id="menu-screen">
-        <h2>ВЫБЕРИ УРОВЕНЬ</h2>
-        <button class="menu-btn" style="background: #4cd137;" onclick="startGame('Грибной лес')">ГРИБНОЙ ЛЕС</button>
-        <button class="menu-btn" style="background: #e84118;" onclick="startGame('Горы дракона')">ГОРЫ ДРАКОНА</button>
-        <button class="menu-btn" style="background: #f39c12;" onclick="startGame('Тайный замок')">ТАЙНЫЙ ЗАМОК</button>
+        <h1 style="text-align: center;">ЗАГАДКИ СМАЙЛИКА</h1>
+        <button class="menu-btn" style="background: #4cd137;" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄</button>
+        <button class="menu-btn" style="background: #e84118;" onclick="startGame('сложные')">ГОРЫ ДРАКОНА 🌋</button>
+        <button class="menu-btn" style="background: #f39c12;" onclick="startGame('с подвохом')">ТАЙНЫЙ ЗАМОК 🔮</button>
     </div>
 
     <div id="game-screen">
-        <div class="box" id="q-text">Загрузка...</div>
-        <button onclick="location.reload()">НАЗАД</button>
+        <div class="header">
+            <div class="stat-card"><div style="color:#888; font-size:9px">РЕЙТИНГ</div><span id="rank">-</span></div>
+            <div class="stat-card"><div style="color:#888; font-size:9px">ПОДСКАЗКИ</div><span id="hints">0</span></div>
+        </div>
+        <div class="question-box" id="q-text">Загрузка...</div>
+        <div class="boxes" id="box-container"></div>
+        <div id="kb-container" class="keyboard"></div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+            <button class="btn" style="background:#a29bfe" onclick="useHint()">ПОДСКАЗКА</button>
+            <button class="btn" style="background:#4cd137" onclick="check()">ПРОВЕРИТЬ</button>
+            <button class="btn" style="background:#ffcc00; color: #555;" onclick="reveal()">ОТВЕТ</button>
+        </div>
+        <button id="b-next" class="btn" style="display:none; width: 100%; background: var(--main-blue); margin-top: 15px; font-size: 16px;" onclick="loadRiddle()">ДАЛЬШЕ ✨</button>
+        <div onclick="location.reload()" style="text-align:center; margin-top:20px; cursor:pointer; font-weight: bold;">↩ В МЕНЮ</div>
     </div>
 
-    <script>
-        const tg = window.Telegram.WebApp;
-        let currentCategory = "";
+<script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+    const AdController = window.Adsgram.init({ blockId: "23236" });
 
-        async function startGame(cat) {
-            currentCategory = cat;
-            document.getElementById('menu-screen').style.display = 'none';
-            document.getElementById('game-screen').style.display = 'block';
-            
-            const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCategory)}`);
-            if(!r.ok) {
-                tg.showAlert("В этой категории ещё нет загадок. Добавьте их в админке.");
-                location.reload();
-                return;
-            }
-            const data = await r.json();
-            document.getElementById('q-text').innerText = data.question;
+    let curRiddle = null, selIdx = 0, fullAns = "", currentCategory = "";
+
+    function startGame(cat) {
+        currentCategory = cat;
+        document.getElementById('menu-screen').style.display = 'none';
+        document.getElementById('game-screen').style.display = 'flex';
+        loadRiddle();
+    }
+
+    async function loadRiddle() {
+        document.getElementById('q-text').style.background = "white";
+        document.getElementById('b-next').style.display = 'none';
+        const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCategory)}`);
+        if(!r.ok) { 
+            tg.showAlert(`В категории "${currentCategory}" пока нет загадок в базе!`); 
+            location.reload(); 
+            return; 
         }
-    </script>
+        curRiddle = await r.json();
+        document.getElementById('q-text').innerText = curRiddle.question;
+        const ra = await fetch('/api/reveal?id='+curRiddle.id);
+        const data = await ra.json();
+        fullAns = data.answer.toUpperCase();
+        
+        const cont = document.getElementById('box-container');
+        cont.innerHTML = '';
+        for(let i=0; i<curRiddle.len; i++) {
+            const b = document.createElement('div');
+            b.className = 'letter' + (i===0?' active':'');
+            b.id = 'b-'+i;
+            b.onclick = () => {
+                document.querySelectorAll('.letter').forEach(el=>el.classList.remove('active'));
+                b.classList.add('active'); selIdx = i;
+            };
+            cont.appendChild(b);
+        }
+        selIdx = 0;
+        updateStats();
+    }
+
+    async function updateStats() {
+        const r = await fetch('/api/user-info', {
+            method: 'POST', headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id, username: tg.initDataUnsafe.user.first_name })
+        });
+        const d = await r.json();
+        document.getElementById('rank').innerText = d.rank;
+        document.getElementById('hints').innerText = d.hints;
+    }
+
+    async function useHint() {
+        const h = parseInt(document.getElementById('hints').innerText);
+        if (h <= 0) {
+            tg.showConfirm("Подсказки кончились! Смотрим рекламу?", (ok) => { if(ok) showAd(); });
+            return;
+        }
+        document.getElementById('b-'+selIdx).innerText = fullAns[selIdx];
+        await fetch('/api/use-hint', {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({user_id:tg.initDataUnsafe.user.id})});
+        updateStats();
+    }
+
+    async function showAd() {
+        try {
+            const res = await AdController.show();
+            if(res.done) {
+                await fetch('/api/add-hints-ad', { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ user_id: tg.initDataUnsafe.user.id }) });
+                updateStats();
+            }
+        } catch(e) { tg.showAlert("Реклама не готова."); }
+    }
+
+    async function check() {
+        let ans = "";
+        for(let i=0; i<curRiddle.len; i++) ans += document.getElementById('b-'+i).innerText;
+        const res = await fetch('/api/check', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({user_id: tg.initDataUnsafe.user.id, riddle_id: curRiddle.id, answer: ans}) });
+        const d = await res.json();
+        if(d.success) {
+            document.getElementById('q-text').style.background = "#4cd137";
+            document.getElementById('q-text').style.color = "white";
+            document.getElementById('b-next').style.display = 'block';
+            updateStats();
+        } else tg.showAlert("Неверно!");
+    }
+
+    function createKb() {
+        const k = document.getElementById('kb-container');
+        "АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ".split('').forEach(l => {
+            const d = document.createElement('div');
+            d.className = 'key'; d.innerText = l;
+            d.onclick = () => {
+                document.getElementById('b-'+selIdx).innerText = l;
+                if(selIdx < curRiddle.len - 1) {
+                    selIdx++;
+                    document.querySelectorAll('.letter').forEach(el=>el.classList.remove('active'));
+                    document.getElementById('b-'+selIdx).classList.add('active');
+                }
+            };
+            k.appendChild(d);
+        });
+        const del = document.createElement('div');
+        del.className = 'key del'; del.innerText = '⬅';
+        del.onclick = () => {
+            document.getElementById('b-'+selIdx).innerText = '';
+            if(selIdx > 0) {
+                selIdx--;
+                document.querySelectorAll('.letter').forEach(el=>el.classList.remove('active'));
+                document.getElementById('b-'+selIdx).classList.add('active');
+            }
+        };
+        k.appendChild(del);
+    }
+    createKb();
+</script>
 </body>
 </html>
