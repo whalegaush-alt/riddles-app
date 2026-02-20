@@ -12,12 +12,15 @@
         #game-screen { display: none; flex-direction: column; align-items: center; }
         .box { background: white; padding: 20px; border-radius: 15px; width: 100%; box-sizing: border-box; text-align: center; font-weight: bold; margin-bottom: 15px; border: 2px solid #248bcf; }
         .letters { display: flex; gap: 5px; justify-content: center; margin-bottom: 15px; flex-wrap: wrap; }
-        .l-box { width: 35px; height: 45px; background: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; border-radius: 5px; box-shadow: 0 3px 0 #ccc; }
+        .l-box { width: 35px; height: 45px; background: white; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 900; border-radius: 8px; box-shadow: 0 3px 0 #ccc; }
         .l-box.active { border: 2px solid #ffcc00; }
         .keyboard { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; width: 100%; }
         .key { background: white; padding: 10px 0; border-radius: 5px; text-align: center; font-weight: bold; font-size: 12px; cursor: pointer; box-shadow: 0 2px 0 #999; }
         .key.del { grid-column: span 2; background: #ff7675; color: white; }
-        .btn { padding: 15px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; width: 100%; margin-top: 10px; }
+        
+        /* Кнопки управления */
+        .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 10px; }
+        .btn { padding: 15px; border-radius: 10px; border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 rgba(0,0,0,0.1); }
     </style>
 </head>
 <body>
@@ -32,7 +35,12 @@
         <div class="box" id="q-text">Загрузка...</div>
         <div class="letters" id="l-cont"></div>
         <div id="kb" class="keyboard"></div>
-        <button class="btn" style="background:#4cd137" onclick="check()">ПРОВЕРИТЬ</button>
+        
+        <div class="actions">
+            <button class="btn" style="background:#a29bfe" onclick="useHint()">💡 ПОДСКАЗКА</button>
+            <button class="btn" style="background:#4cd137" onclick="check()">ПРОВЕРИТЬ</button>
+        </div>
+        
         <button class="btn" style="background:#f39c12" onclick="location.reload()">В МЕНЮ</button>
     </div>
 
@@ -72,6 +80,16 @@
         selIdx = 0;
     }
 
+    // --- НОВАЯ ФУНКЦИЯ ПОДСКАЗКИ ---
+    function useHint() {
+        // Ставим правильную букву в текущую активную ячейку
+        const activeBox = document.getElementById('L-' + selIdx);
+        if (activeBox) {
+            activeBox.innerText = fullAns[selIdx];
+            activeBox.style.color = "#248bcf"; // Выделим цветом, что это подсказка
+        }
+    }
+
     function check() {
         let userAns = "";
         for(let i=0; i<curRiddle.len; i++) userAns += document.getElementById('L-'+i).innerText;
@@ -90,6 +108,7 @@
             d.className = 'key'; d.innerText = l;
             d.onclick = () => {
                 document.getElementById('L-'+selIdx).innerText = l;
+                document.getElementById('L-'+selIdx).style.color = "#333";
                 if(selIdx < curRiddle.len - 1) {
                     selIdx++;
                     document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
