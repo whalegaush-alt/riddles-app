@@ -9,7 +9,8 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #74b9ff; margin: 0; padding: 15px; color: #333; display: flex; flex-direction: column; align-items: center; }
         #menu-screen { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 350px; margin-top: 50px; }
-        .menu-btn { padding: 20px; border-radius: 15px; border: none; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
+        .menu-btn { padding: 20px; border-radius: 15px; border: none; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1); transition: 0.2s; }
+        .menu-btn:active { transform: translateY(2px); box-shadow: none; }
         #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 400px; }
         .box { background: white; padding: 20px; border-radius: 20px; text-align: center; font-weight: bold; border: 3px solid #248bcf; margin-bottom: 20px; width: 100%; box-sizing: border-box; min-height: 80px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .letters { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
@@ -51,7 +52,16 @@
 <script>
     const tg = window.Telegram.WebApp;
     tg.expand();
-    const AdController = window.Adsgram.init({ blockId: "23236" });
+
+    // БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ ADSGRAM
+    let AdController = null;
+    try {
+        if (window.Adsgram) {
+            AdController = window.Adsgram.init({ blockId: "23236" });
+        }
+    } catch (e) {
+        console.log("Adsgram не загружен:", e);
+    }
 
     let curRiddle = null, selIdx = 0, fullAns = "", currentCat = "";
 
@@ -63,28 +73,32 @@
     }
 
     async function loadRiddle() {
-        const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCat)}`);
-        if(!r.ok) { tg.showAlert("Загадки закончились!"); location.reload(); return; }
-        curRiddle = await r.json();
-        document.getElementById('q-text').innerText = curRiddle.question;
-        
-        const ra = await fetch('/api/reveal?id=' + curRiddle.id);
-        const data = await ra.json();
-        fullAns = data.answer.toUpperCase();
+        try {
+            const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCat)}`);
+            if(!r.ok) { tg.showAlert("Загадки закончились!"); location.reload(); return; }
+            curRiddle = await r.json();
+            document.getElementById('q-text').innerText = curRiddle.question;
+            
+            const ra = await fetch('/api/reveal?id=' + curRiddle.id);
+            const data = await ra.json();
+            fullAns = data.answer.toUpperCase();
 
-        const cont = document.getElementById('l-cont');
-        cont.innerHTML = '';
-        for(let i=0; i<curRiddle.len; i++) {
-            const d = document.createElement('div');
-            d.className = 'l-box' + (i==0?' active':'');
-            d.id = 'L-'+i;
-            d.onclick = () => {
-                document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
-                d.classList.add('active'); selIdx = i;
-            };
-            cont.appendChild(d);
+            const cont = document.getElementById('l-cont');
+            cont.innerHTML = '';
+            for(let i=0; i<curRiddle.len; i++) {
+                const d = document.createElement('div');
+                d.className = 'l-box' + (i==0?' active':'');
+                d.id = 'L-'+i;
+                d.onclick = () => {
+                    document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
+                    d.classList.add('active'); selIdx = i;
+                };
+                cont.appendChild(d);
+            }
+            selIdx = 0;
+        } catch (e) {
+            tg.showAlert("Ошибка связи с сервером");
         }
-        selIdx = 0;
     }
 
     function useHint() {
@@ -106,12 +120,16 @@
 
         tg.showConfirm("Посмотреть рекламу и узнать ответ?", async (ok) => {
             if (ok) {
-                try {
-                    const res = await AdController.show();
-                    if (res.done) displayResult();
-                    else tg.showAlert("Нужно досмотреть рекламу!");
-                } catch (e) {
-                    displayResult(); // Если рекламы нет, просто даем ответ
+                if (AdController) {
+                    try {
+                        const res = await AdController.show();
+                        if (res.done) displayResult();
+                        else tg.showAlert("Нужно досмотреть рекламу!");
+                    } catch (e) {
+                        displayResult(); // Если реклама не сработала — просто даем ответ
+                    }
+                } else {
+                    displayResult(); // Если Adsgram заблокирован — просто даем ответ
                 }
             }
         });
@@ -134,12 +152,15 @@
             const d = document.createElement('div');
             d.className = 'key'; d.innerText = l;
             d.onclick = () => {
-                document.getElementById('L-'+selIdx).innerText = l;
-                document.getElementById('L-'+selIdx).style.color = "#333";
-                if(selIdx < curRiddle.len - 1) {
-                    selIdx++;
-                    document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
-                    document.getElementById('L-'+selIdx).classList.add('active');
+                const box = document.getElementById('L-'+selIdx);
+                if (box) {
+                    box.innerText = l;
+                    box.style.color = "#333";
+                    if(selIdx < curRiddle.len - 1) {
+                        selIdx++;
+                        document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
+                        document.getElementById('L-'+selIdx).classList.add('active');
+                    }
                 }
             };
             k.appendChild(d);
