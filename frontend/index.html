@@ -6,6 +6,7 @@
     <title>Загадки Смайлика</title>
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script src="https://sad.adsgram.ai/js/adsgram-ad-sdk.js"></script>
+    <script src="https://ad.gigapub.tech/script?id=5697"></script>
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #74b9ff; margin: 0; padding: 15px; color: #333; display: flex; flex-direction: column; align-items: center; }
         #menu-screen { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 350px; margin-top: 50px; }
@@ -49,7 +50,7 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // 1. РЕГИСТРАЦИЯ ЮЗЕРА ПРИ ВХОДЕ
+    // 1. РЕГИСТРАЦИЯ ЮЗЕРА
     async function initUser() {
         const user = tg.initDataUnsafe?.user;
         if (user) {
@@ -68,7 +69,7 @@
     }
     initUser();
 
-    // 2. ИНИЦИАЛИЗАЦИЯ РЕКЛАМЫ
+    // 2. ИНИЦИАЛИЗАЦИЯ ADSGRAM (для ответов)
     let AdController = null;
     try {
         if (window.Adsgram) {
@@ -110,7 +111,8 @@
         selIdx = 0;
     }
 
-    function useHint() {
+    // --- НОВАЯ ПОДСКАЗКА (Через Giga Pub) ---
+    function applyHint() {
         const activeBox = document.getElementById('L-' + selIdx);
         if (activeBox) {
             activeBox.innerText = fullAns[selIdx];
@@ -118,6 +120,24 @@
         }
     }
 
+    async function useHint() {
+        tg.showConfirm("Посмотреть рекламу и получить подсказку?", async (ok) => {
+            if (ok) {
+                if (window.showGiga) {
+                    window.showGiga()
+                        .then(() => { applyHint(); })
+                        .catch(e => { 
+                            console.error("Giga error:", e);
+                            applyHint(); // Если ошибка — даем бесплатно
+                        });
+                } else {
+                    applyHint(); // Если скрипт не загружен
+                }
+            }
+        });
+    }
+
+    // --- ОТВЕТ (Через Adsgram) ---
     async function showAnswer() {
         const displayResult = () => {
             tg.showPopup({ title: 'Ответ', message: `Это слово: ${fullAns}`, buttons: [{type: 'ok'}] });
