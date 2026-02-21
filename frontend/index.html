@@ -9,8 +9,7 @@
     <style>
         body { font-family: 'Segoe UI', sans-serif; background: #74b9ff; margin: 0; padding: 15px; color: #333; display: flex; flex-direction: column; align-items: center; }
         #menu-screen { display: flex; flex-direction: column; gap: 12px; width: 100%; max-width: 350px; margin-top: 50px; }
-        .menu-btn { padding: 20px; border-radius: 15px; border: none; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1); transition: 0.2s; }
-        .menu-btn:active { transform: translateY(2px); box-shadow: none; }
+        .menu-btn { padding: 20px; border-radius: 15px; border: none; color: white; font-weight: bold; font-size: 18px; cursor: pointer; box-shadow: 0 4px 0 rgba(0,0,0,0.1); }
         #game-screen { display: none; flex-direction: column; align-items: center; width: 100%; max-width: 400px; }
         .box { background: white; padding: 20px; border-radius: 20px; text-align: center; font-weight: bold; border: 3px solid #248bcf; margin-bottom: 20px; width: 100%; box-sizing: border-box; min-height: 80px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
         .letters { display: flex; gap: 6px; justify-content: center; margin-bottom: 20px; flex-wrap: wrap; }
@@ -18,7 +17,6 @@
         .l-box.active { border: 2px solid #ffcc00; box-shadow: 0 4px 0 #ffcc00; transform: translateY(-2px); }
         .keyboard { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; width: 100%; }
         .key { background: white; padding: 12px 0; border-radius: 6px; text-align: center; font-weight: bold; font-size: 13px; cursor: pointer; box-shadow: 0 2px 0 #999; -webkit-tap-highlight-color: transparent; }
-        .key:active { transform: translateY(2px); box-shadow: none; }
         .key.del { grid-column: span 2; background: #ff7675; color: white; font-size: 18px; }
         .actions { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; width: 100%; margin-top: 15px; }
         .btn { padding: 15px; border-radius: 12px; border: none; color: white; font-weight: bold; cursor: pointer; box-shadow: 0 3px 0 rgba(0,0,0,0.1); font-size: 14px; }
@@ -27,7 +25,7 @@
 <body>
 
     <div id="menu-screen">
-        <h1 style="color: white; text-align: center; margin-bottom: 10px;">ЗАГАДКИ СМАЙЛИКА</h1>
+        <h1 style="color: white; text-align: center;">ЗАГАДКИ СМАЙЛИКА</h1>
         <button class="menu-btn" style="background: #4cd137;" onclick="startGame('лёгкие')">ГРИБНОЙ ЛЕС 🍄</button>
         <button class="menu-btn" style="background: #e84118;" onclick="startGame('сложные')">ГОРЫ ДРАКОНА 🌋</button>
         <button class="menu-btn" style="background: #f39c12;" onclick="startGame('с подвохом')">ТАЙНЫЙ ЗАМОК 🔮</button>
@@ -37,12 +35,10 @@
         <div class="box" id="q-text">Загрузка...</div>
         <div class="letters" id="l-cont"></div>
         <div id="kb" class="keyboard"></div>
-        
         <div class="actions">
             <button class="btn" style="background:#a29bfe" onclick="useHint()">💡 ПОДСКАЗКА</button>
             <button class="btn" style="background:#ffcc00; color: #333;" onclick="showAnswer()">👁 ОТВЕТ</button>
         </div>
-        
         <div class="actions">
             <button class="btn" style="background:#4cd137" onclick="check()">ПРОВЕРИТЬ</button>
             <button class="btn" style="background:#636e72" onclick="location.reload()">В МЕНЮ</button>
@@ -53,15 +49,32 @@
     const tg = window.Telegram.WebApp;
     tg.expand();
 
-    // БЕЗОПАСНАЯ ИНИЦИАЛИЗАЦИЯ ADSGRAM
+    // 1. РЕГИСТРАЦИЯ ЮЗЕРА ПРИ ВХОДЕ
+    async function initUser() {
+        const user = tg.initDataUnsafe?.user;
+        if (user) {
+            try {
+                await fetch('/api/user-init', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        id: user.id,
+                        username: user.username,
+                        first_name: user.first_name
+                    })
+                });
+            } catch (e) { console.error("User init error", e); }
+        }
+    }
+    initUser();
+
+    // 2. ИНИЦИАЛИЗАЦИЯ РЕКЛАМЫ
     let AdController = null;
     try {
         if (window.Adsgram) {
             AdController = window.Adsgram.init({ blockId: "23236" });
         }
-    } catch (e) {
-        console.log("Adsgram не загружен:", e);
-    }
+    } catch (e) { console.log("Adsgram blocked"); }
 
     let curRiddle = null, selIdx = 0, fullAns = "", currentCat = "";
 
@@ -73,32 +86,28 @@
     }
 
     async function loadRiddle() {
-        try {
-            const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCat)}`);
-            if(!r.ok) { tg.showAlert("Загадки закончились!"); location.reload(); return; }
-            curRiddle = await r.json();
-            document.getElementById('q-text').innerText = curRiddle.question;
-            
-            const ra = await fetch('/api/reveal?id=' + curRiddle.id);
-            const data = await ra.json();
-            fullAns = data.answer.toUpperCase();
+        const r = await fetch(`/api/riddle?category=${encodeURIComponent(currentCat)}`);
+        if(!r.ok) { tg.showAlert("Загадки закончились!"); return; }
+        curRiddle = await r.json();
+        document.getElementById('q-text').innerText = curRiddle.question;
+        
+        const ra = await fetch('/api/reveal?id=' + curRiddle.id);
+        const data = await ra.json();
+        fullAns = data.answer.toUpperCase();
 
-            const cont = document.getElementById('l-cont');
-            cont.innerHTML = '';
-            for(let i=0; i<curRiddle.len; i++) {
-                const d = document.createElement('div');
-                d.className = 'l-box' + (i==0?' active':'');
-                d.id = 'L-'+i;
-                d.onclick = () => {
-                    document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
-                    d.classList.add('active'); selIdx = i;
-                };
-                cont.appendChild(d);
-            }
-            selIdx = 0;
-        } catch (e) {
-            tg.showAlert("Ошибка связи с сервером");
+        const cont = document.getElementById('l-cont');
+        cont.innerHTML = '';
+        for(let i=0; i<curRiddle.len; i++) {
+            const d = document.createElement('div');
+            d.className = 'l-box' + (i==0?' active':'');
+            d.id = 'L-'+i;
+            d.onclick = () => {
+                document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
+                d.classList.add('active'); selIdx = i;
+            };
+            cont.appendChild(d);
         }
+        selIdx = 0;
     }
 
     function useHint() {
@@ -111,26 +120,17 @@
 
     async function showAnswer() {
         const displayResult = () => {
-            tg.showPopup({
-                title: 'Правильный ответ',
-                message: `Это слово: ${fullAns}`,
-                buttons: [{type: 'ok'}]
-            });
+            tg.showPopup({ title: 'Ответ', message: `Это слово: ${fullAns}`, buttons: [{type: 'ok'}] });
         };
-
         tg.showConfirm("Посмотреть рекламу и узнать ответ?", async (ok) => {
             if (ok) {
                 if (AdController) {
                     try {
                         const res = await AdController.show();
                         if (res.done) displayResult();
-                        else tg.showAlert("Нужно досмотреть рекламу!");
-                    } catch (e) {
-                        displayResult(); // Если реклама не сработала — просто даем ответ
-                    }
-                } else {
-                    displayResult(); // Если Adsgram заблокирован — просто даем ответ
-                }
+                        else tg.showAlert("Нужно досмотреть до конца!");
+                    } catch (e) { displayResult(); }
+                } else { displayResult(); }
             }
         });
     }
@@ -141,9 +141,7 @@
         if(userAns === fullAns) {
             tg.showAlert("ПРАВИЛЬНО! ✨");
             loadRiddle();
-        } else {
-            tg.showAlert("НЕВЕРНО!");
-        }
+        } else { tg.showAlert("НЕВЕРНО!"); }
     }
 
     function initKb() {
@@ -153,9 +151,8 @@
             d.className = 'key'; d.innerText = l;
             d.onclick = () => {
                 const box = document.getElementById('L-'+selIdx);
-                if (box) {
+                if(box) {
                     box.innerText = l;
-                    box.style.color = "#333";
                     if(selIdx < curRiddle.len - 1) {
                         selIdx++;
                         document.querySelectorAll('.l-box').forEach(el=>el.classList.remove('active'));
